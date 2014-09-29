@@ -17,13 +17,13 @@ public class CreateNetwork {
 	}
 
 	public ArrayList<String[]> getLinkList(String filename) throws IOException {
-		// 读取文件内容，返回一个存在用户商品边数组的arraylist
+		// 璇诲彇鏂囦欢鍐呭锛岃繑鍥炰竴涓瓨鍦ㄧ敤鎴峰晢鍝佽竟鏁扮粍鐨刟rraylist
 		ArrayList<String[]> links = new ArrayList<String[]>();
 		InputStream url = this.getClass().getResourceAsStream(filename);
-//		File file = new File(url);
-//		FileReader reader = new FileReader(file);
-//		BufferedReader br = new BufferedReader(reader);
-		BufferedReader br=new BufferedReader(new InputStreamReader(url));  
+		// File file = new File(url);
+		// FileReader reader = new FileReader(file);
+		// BufferedReader br = new BufferedReader(reader);
+		BufferedReader br = new BufferedReader(new InputStreamReader(url));
 		String line = null;
 		while ((line = br.readLine()) != null) {
 			String[] link = line.split(" ");
@@ -37,43 +37,37 @@ public class CreateNetwork {
 			ArrayList<String[]> links) {
 		HashMap<String, HashMap<String, Integer>> usersitems = new HashMap<String, HashMap<String, Integer>>();
 		HashMap<String, HashMap<String, Integer>> itemsusers = new HashMap<String, HashMap<String, Integer>>();
-//		System.out.println(links.size());
-		for (int i = 0; i < links.size(); i++) {
-			try {
-				HashMap<String, Integer> sonmap = usersitems
-						.get(links.get(i)[0]);
-				sonmap.put(links.get(i)[1], 1);
-//				if(sonmap.size()<3)
-//				System.out.println(sonmap);
-				// 更新用户的邻居和度数量
-			} catch (Exception e) {
-				HashMap<String, Integer> sonmap = new HashMap<String, Integer>();
-				sonmap.put(links.get(i)[1], 1);
-				usersitems.put(links.get(i)[0], sonmap);
-				// 建立用户，并更新用户
-			}
+		// System.out.println(links.size());
 
+		for (int i = 0; i < links.size(); i++) {
+			String user = links.get(i)[0];
+			String item = links.get(i)[1];
+			if (usersitems.containsKey(user)) {
+				HashMap<String, Integer> sonmap = usersitems.get(user);
+				sonmap.put(item, 1);
+			} else {
+				HashMap<String, Integer> sonmap = new HashMap<String, Integer>();
+				sonmap.put(item, 1);
+				usersitems.put(user, sonmap);
+			}
 		}
-		for (int i = 0; i < links.size(); i++) {
-			try {
-				HashMap<String, Integer> sonmap = itemsusers
-						.get(links.get(i)[1]);
-//				sonmap.put("degree", sonmap.get("degree") + 1);
-				sonmap.put(links.get(i)[0], 1);
-				// 更新商品邻居和度数量
-			} catch (Exception e) {
-				HashMap<String, Integer> sonmap = new HashMap<String, Integer>();
-				sonmap.put(links.get(i)[0], 1);
-//				sonmap.put("degree", 1);
-				itemsusers.put(links.get(i)[1], sonmap);
-				// 建立商品，并更新商品
-			}
 
+		for (int i = 0; i < links.size(); i++) {
+			String user = links.get(i)[0];
+			String item = links.get(i)[1];
+			if (itemsusers.containsKey(item)) {
+				HashMap<String, Integer> sonmap = itemsusers.get(item);
+				sonmap.put(user, 1);
+			} else {
+				HashMap<String, Integer> sonmap = new HashMap<String, Integer>();
+				sonmap.put(user, 1);
+				itemsusers.put(item, sonmap);
+			}
 		}
 		HashMap<String, HashMap<String, HashMap<String, Integer>>> result = new HashMap<String, HashMap<String, HashMap<String, Integer>>>();
 		result.put("usersitems", usersitems);
 		result.put("itemsusers", itemsusers);
-		// 将结果放入字典中作为返回值
+		// 灏嗙粨鏋滄斁鍏ュ瓧鍏镐腑浣滀负杩斿洖鍊�
 		return result;
 	}
 
@@ -82,24 +76,26 @@ public class CreateNetwork {
 			return;
 		}
 		for (int i = 0; i < n; i++) {
-			// 调用Math.random()方法 HashSet<Integer>
+			// 璋冪敤Math.random()鏂规硶 HashSet<Integer>
 			int num = (int) (Math.random() * (max - min)) + min;
-			set.add(num);// 将不同的数存入HashSet中
+			set.add(num);// 灏嗕笉鍚岀殑鏁板瓨鍏ashSet涓�
 		}
 		int setSize = set.size();
-		// 如果存入的数小于指定生成的个数，则调用递归再生成剩余个数的随机数，如此循环，直到达到指定大小
+		// 濡傛灉瀛樺叆鐨勬暟灏忎簬鎸囧畾鐢熸垚鐨勪釜鏁帮紝鍒欒皟鐢ㄩ�掑綊鍐嶇敓鎴愬墿浣欎釜鏁扮殑闅忔満鏁帮紝濡傛寰幆锛岀洿鍒拌揪鍒版寚瀹氬ぇ灏�
 		if (setSize < n) {
-			randomSet(min, max, n - setSize, set);// 递归
+			randomSet(min, max, n - setSize, set);// 閫掑綊
 		}
 	}
 
-	public HashMap<String,ArrayList<String[]>> randomDel(ArrayList<String[]> links, float p) {
-		//返回删除的边和生产的新的边，这些边保存在Arraylist<String[]>中，最后讲删除的边和新的边的Arraylist保存在字典中返回。
+	@SuppressWarnings("unchecked")
+	public HashMap<String, ArrayList<String[]>> randomDel(
+			ArrayList<String[]> links, float p) {
+		// 杩斿洖鍒犻櫎鐨勮竟鍜岀敓浜х殑鏂扮殑杈癸紝杩欎簺杈逛繚瀛樺湪Arraylist<String[]>涓紝鏈�鍚庤鍒犻櫎鐨勮竟鍜屾柊鐨勮竟鐨凙rraylist淇濆瓨鍦ㄥ瓧鍏镐腑杩斿洖銆�
 		ArrayList<String[]> newlinks = new ArrayList<String[]>();
 		newlinks = (ArrayList<String[]>) links.clone();
 		int linksnum = links.size();
 		int delnum = (int) (linksnum * p);
-		HashMap<String,ArrayList<String[]>> result = new HashMap<String, ArrayList<String[]>>();
+		HashMap<String, ArrayList<String[]>> result = new HashMap<String, ArrayList<String[]>>();
 		HashSet<Integer> set = new HashSet<Integer>();
 		randomSet(0, linksnum, delnum, set);
 		// System.out.println(set);
@@ -107,8 +103,8 @@ public class CreateNetwork {
 		for (Integer index : set) {
 			String[] item = links.get(index);
 			dellinks.add(item);
-//			System.out.println(item[0]+"\t"+item[1]);
-			
+			// System.out.println(item[0]+"\t"+item[1]);
+
 		}
 		newlinks.removeAll(dellinks);
 		result.put("newlinks", newlinks);
@@ -118,6 +114,10 @@ public class CreateNetwork {
 	}
 
 	public static void main(String[] args) throws IOException {
+		CreateNetwork test = new CreateNetwork();
+		ArrayList<String[]> links = test.getLinkList("/source/test.data");
+		HashMap<String, HashMap<String, HashMap<String, Integer>>> a = test.mapLink(links);
+		System.out.println(a);
 
 	}
 }
