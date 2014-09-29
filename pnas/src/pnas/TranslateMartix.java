@@ -40,7 +40,7 @@ public class TranslateMartix {
 			Set<String> commonusers = new HashSet<String>();
 			commonusers.addAll(testitemlinkusers);
 			commonusers.retainAll(compareitemlinkusers);
-//			commonusers.remove("degree");
+			// commonusers.remove("degree");
 			if (commonusers.size() == 0)
 				continue;
 			for (String user : commonusers) {
@@ -62,23 +62,27 @@ public class TranslateMartix {
 		float lambda = 0f;
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork
-				.getLinkList("/source/new.data");
-
+				.getLinkList("/source/test.data");
+		HashMap<String, ArrayList<String[]>> a = createnetwork.randomDel(links,
+				0.1f);
+		ArrayList<String[]> newlinks = a.get("newlinks");
+		ArrayList<String[]> removelinks = a.get("dellinks");
+		System.out.println("remove"+createnetwork.mapLink(removelinks));
 		HashMap<String, HashMap<String, HashMap<String, Integer>>> linksmap = createnetwork
-				.mapLink(links);
-		
+				.mapLink(newlinks);
+
 		TranslateMartix test = new TranslateMartix(linksmap);
 		// 创建一个可重用固定线程数的线程池
 		System.out.println("start to multiprocess!");
 		long now = System.currentTimeMillis();
 
-		ExecutorService pool = Executors.newFixedThreadPool(20);
+		ExecutorService pool = Executors.newFixedThreadPool(100);
 
-		 for (String item : test.itemsusers.keySet()) {
+		for (String item : test.itemsusers.keySet()) {
 
-		 pool.execute(new Myrunnable(test, item, wmartix, lambda));
+			pool.execute(new Myrunnable(test, item, wmartix, lambda));
 
-		 }
+		}
 
 		pool.shutdown();
 		while (true) {
@@ -86,7 +90,7 @@ public class TranslateMartix {
 				System.out.println("used secondes"
 						+ String.valueOf(System.currentTimeMillis() - now));
 				System.out.println(wmartix.size());
-				//				System.out.println(wmartix);
+				System.out.println(wmartix);
 				// System.out.println(wmartix.get("1022"));
 				break;
 			}

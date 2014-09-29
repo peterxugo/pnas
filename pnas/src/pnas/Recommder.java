@@ -27,7 +27,7 @@ public class Recommder {
 		ConcurrentHashMap<String, HashMap<String, Float>> wmartix = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork
-				.getLinkList("/source/new.data");
+				.getLinkList("/source/newnetflix");
 		HashMap<String, ArrayList<String[]>> result = createnetwork.randomDel(
 				links, 0.1f);
 		ArrayList<String[]> newlinks = result.get("newlinks");
@@ -41,10 +41,15 @@ public class Recommder {
 		this.removeusersitems = removeusersitems;
 		this.usersitems = newlinksmap.get("usersitems");
 		this.itemsusers = newlinksmap.get("itemsusers");
-
+//		HashMap<String, HashMap<String, HashMap<String, Integer>>> a  =new HashMap<String, HashMap<String,HashMap<String,Integer>>>();
+//		a.put("usersitems", this.usersitems );
+//		a.put("itemsusers", this.itemsusers);
+		//netflix data user and item difference
+//		System.out.println(newlinksmap);
+//		System.out.println(removeusersitems);
 		TranslateMartix test = new TranslateMartix(newlinksmap);
 		// 鍒涘缓涓�涓彲閲嶇敤鍥哄畾绾跨▼鏁扮殑绾跨▼姹�
-		System.out.println("start to multiprocess!");
+//		System.out.println("start to multiprocess!");
 		long now = System.currentTimeMillis();
 		ExecutorService pool = Executors.newFixedThreadPool(100);
 		for (String item : test.itemsusers.keySet()) {
@@ -53,9 +58,9 @@ public class Recommder {
 		pool.shutdown();
 		while (true) {
 			if (pool.isTerminated()) {
-				System.out.println("used secondes"
+				System.out.println("wmartix used secondes\t"
 						+ String.valueOf(System.currentTimeMillis() - now));
-				System.out.println("wmartix\t" + wmartix.size());
+				System.out.println("wmartix size is \t" + wmartix.size());
 				this.wmartix = wmartix;
 				break;
 			}
@@ -67,8 +72,11 @@ public class Recommder {
 	public HashMap<String, Float> getOneUserrecommder(String user) {
 		HashMap<String, Float> userrecommder = new HashMap<String, Float>();
 		HashSet<String> testitems = new HashSet<String>();
+//		System.out.println(this.itemsusers.keySet());
+//		System.out.println(this.usersitems.get(user));
 		testitems.addAll(this.itemsusers.keySet());
 		testitems.removeAll(this.usersitems.get(user).keySet());
+//		System.out.println(testitems);
 		for (String item : testitems) {
 			float score = 0;
 			HashSet<String> commonitems = new HashSet<String>();
@@ -100,8 +108,11 @@ public class Recommder {
 
 		ConcurrentHashMap<String, HashMap<String, Float>> reommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		HashSet<String> commusers = new HashSet<String>();
+//		System.out.println("est.removeusersitems"+test.removeusersitems);
+//		System.out.println("test.usersitems"+test.usersitems);
 		commusers.addAll(test.removeusersitems.keySet());
 		commusers.retainAll(test.usersitems.keySet());
+		
 		ExecutorService pool2 = Executors.newFixedThreadPool(100);
 		for (String user : commusers) {
 			pool2.execute(new Mythread(user, test, reommdermap));
@@ -112,7 +123,10 @@ public class Recommder {
 				System.out.println("ok!");
 				System.out.println("cost seconds is "
 						+ String.valueOf(System.currentTimeMillis() - a));
-				System.out.println(reommdermap.size());
+				System.out.println("reommdermap.size()"+reommdermap.size());
+//				System.out.println(test.usersitems);
+//				System.out.println(test.removeusersitems);
+				System.out.println("reommdermap"+reommdermap);
 				break;
 			}
 		}
