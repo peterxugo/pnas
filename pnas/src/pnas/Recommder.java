@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,7 +26,7 @@ public class Recommder {
 		ConcurrentHashMap<String, HashMap<String, Float>> wmartix = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork
-				.getLinkList("/source/newnetflix");
+				.getLinkList("/source/new.data");
 		HashMap<String, ArrayList<String[]>> result = createnetwork.randomDel(
 				links, 0.1f);
 		ArrayList<String[]> newlinks = result.get("newlinks");
@@ -41,6 +40,7 @@ public class Recommder {
 		this.removeusersitems = removeusersitems;
 		this.usersitems = newlinksmap.get("usersitems");
 		this.itemsusers = newlinksmap.get("itemsusers");
+
 //		HashMap<String, HashMap<String, HashMap<String, Integer>>> a  =new HashMap<String, HashMap<String,HashMap<String,Integer>>>();
 //		a.put("usersitems", this.usersitems );
 //		a.put("itemsusers", this.itemsusers);
@@ -130,6 +130,9 @@ public class Recommder {
 				break;
 			}
 		}
+		System.out.println(test.usersitems);
+		System.out.println(test.itemsusers);
+		System.out.println(test.removeusersitems);
 
 	}
 

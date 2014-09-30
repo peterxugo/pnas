@@ -28,6 +28,10 @@ public class Performation {
 	public Performation(float lambda) throws IOException {
 		this.lambda = lambda;
 		this.getRcommder();
+//		System.out.println(this.removeusersitems);
+//		System.out.println(this.usersitems);
+//		System.out.println(this.itemsusers);
+//		System.out.println("usersitems\t"+this.usersitems);
 		this.topn = new ConcurrentHashMap<String, List<Entry<String, Float>>>();
 		this.indexmap = new ConcurrentHashMap<String, HashMap<Float, Float>>();
 		this.ps = new ConcurrentHashMap<String, Float>();
@@ -38,7 +42,7 @@ public class Performation {
 
 		long a = System.currentTimeMillis();
 		// System.out.println("start is " + String.valueOf(a));
-		float lambad = 0.f;
+		float lambad = 0.23f;
 		Recommder recommder = new Recommder(lambad);
 		this.itemsusers = recommder.itemsusers;
 		this.usersitems = recommder.usersitems;
@@ -46,11 +50,13 @@ public class Performation {
 
 		ConcurrentHashMap<String, HashMap<String, Float>> reommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		HashSet<String> commusers = new HashSet<String>();
-//		System.out.println("est.removeusersitems" + recommder.removeusersitems);
-//		System.out.println("test.usersitems" + recommder.usersitems);
+//		 System.out.println("est.removeusersitems" +
+//		 recommder.removeusersitems);
+//		 System.out.println("test.usersitems" + recommder.usersitems);
 		commusers.addAll(recommder.removeusersitems.keySet());
 		commusers.retainAll(recommder.usersitems.keySet());
 		this.commusers = commusers;
+
 		ExecutorService pool2 = Executors.newFixedThreadPool(100);
 		for (String user : commusers) {
 			pool2.execute(new Mythread(user, recommder, reommdermap));
@@ -62,7 +68,8 @@ public class Performation {
 				System.out.println("getRcommder cost seconds is\t"
 						+ String.valueOf(System.currentTimeMillis() - a));
 				this.reommdermap = reommdermap;
-				System.out.println("reommdermap size is\t" + reommdermap.size());
+				System.out
+						.println("reommdermap size is\t" + reommdermap.size());
 				break;
 			}
 		}
@@ -100,9 +107,9 @@ public class Performation {
 	public void indexreommder(String user) {
 		List<Entry<String, Float>> usertopn = this.topn.get(user);
 		HashMap<Float, Float> indexmap = new HashMap<Float, Float>();
-		if(usertopn.size()==0){
+		if (usertopn.size() == 0) {
 			this.indexmap.put(user, indexmap);
-		}else{
+		} else {
 			Float before = usertopn.get(0).getValue();
 			int start = 0;
 			int end = 0;
@@ -124,25 +131,26 @@ public class Performation {
 			}
 			this.indexmap.put(user, indexmap);
 		}
-		
+
 	}
 
 	public void getUserPr(String user, int n) {
 		if (this.topn.get(user).size() == 0) {
-			this.ps.put(user, 0f);
+			System.out.println(user);
 		} else {
 			HashSet<String> hitset = new HashSet<String>();
-//			System.out.println("this.topn" + this.topn + "user " + user);
-			int i ;
-			for (i= 0; i < n & i < this.topn.get(user).size(); i++) {
+			// System.out.println("this.topn" + this.topn + "user " + user);
+			int i;
+			for (i = 0; i < n & i < this.topn.get(user).size(); i++) {
 				Entry<String, Float> item = this.topn.get(user).get(i);
 				hitset.add(item.getKey());
-//				System.out.println(hitset);
+				// System.out.println(hitset);
 			}
 			hitset.retainAll(this.removeusersitems.get(user).keySet());
-//			System.out.println("histset "+hitset);
+			// System.out.println("histset "+hitset);
 			float p = (float) hitset.size() / i;
-//			System.out.println(user + "\t" + String.valueOf(p));
+			System.out.println(user+"\t"+p);
+			// System.out.println(user + "\t" + String.valueOf(p));
 			this.ps.put(user, p);
 		}
 
@@ -154,8 +162,9 @@ public class Performation {
 		float lambda = 0.23f;
 		Performation performation = new Performation(lambda);
 		// System.exit(0);
+//		System.out.println(performation.removeusersitems);
+//		System.out.println(performation.reommdermap);
 		ExecutorService pool3 = Executors.newFixedThreadPool(100);
-
 		for (String user : performation.commusers) {
 			// System.out.println(user);
 			pool3.execute(new Mythread2(performation, user, 20));
