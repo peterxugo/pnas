@@ -26,7 +26,7 @@ public class Recommder {
 		ConcurrentHashMap<String, HashMap<String, Float>> wmartix = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork
-				.getLinkList("/source/new.data");
+				.getLinkList("/source/newnetflix");
 		HashMap<String, ArrayList<String[]>> result = createnetwork.randomDel(
 				links, 0.1f);
 		ArrayList<String[]> newlinks = result.get("newlinks");

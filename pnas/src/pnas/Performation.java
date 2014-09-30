@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,18 +24,20 @@ public class Performation {
 	ConcurrentHashMap<String, List<Map.Entry<String, Float>>> topn;
 	ConcurrentHashMap<String, HashMap<Float, Float>> indexmap;
 	ConcurrentHashMap<String, Float> ps;
+	ConcurrentHashMap<String, Float> rs;
 	HashSet<String> commusers;
 
 	public Performation(float lambda) throws IOException {
 		this.lambda = lambda;
 		this.getRcommder();
-//		System.out.println(this.removeusersitems);
-//		System.out.println(this.usersitems);
-//		System.out.println(this.itemsusers);
-//		System.out.println("usersitems\t"+this.usersitems);
+		// System.out.println(this.removeusersitems);
+		// System.out.println(this.usersitems);
+		// System.out.println(this.itemsusers);
+		// System.out.println("usersitems\t"+this.usersitems);
 		this.topn = new ConcurrentHashMap<String, List<Entry<String, Float>>>();
 		this.indexmap = new ConcurrentHashMap<String, HashMap<Float, Float>>();
 		this.ps = new ConcurrentHashMap<String, Float>();
+		this.rs = new ConcurrentHashMap<String, Float>();
 		// TODO Auto-generated constructor stub
 	}
 
@@ -50,9 +53,9 @@ public class Performation {
 
 		ConcurrentHashMap<String, HashMap<String, Float>> reommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		HashSet<String> commusers = new HashSet<String>();
-//		 System.out.println("est.removeusersitems" +
-//		 recommder.removeusersitems);
-//		 System.out.println("test.usersitems" + recommder.usersitems);
+		// System.out.println("est.removeusersitems" +
+		// recommder.removeusersitems);
+		// System.out.println("test.usersitems" + recommder.usersitems);
 		commusers.addAll(recommder.removeusersitems.keySet());
 		commusers.retainAll(recommder.usersitems.keySet());
 		this.commusers = commusers;
@@ -114,6 +117,7 @@ public class Performation {
 			int start = 0;
 			int end = 0;
 			ArrayList<Float> samescore = new ArrayList<Float>();
+
 			for (int i = 0; i < usertopn.size(); i++) {
 				Float now = usertopn.get(i).getValue();
 				if (now == before) {
@@ -133,7 +137,23 @@ public class Performation {
 		}
 
 	}
+	public void getRankScore(String user) {
+		Set<String> removeitems = this.removeusersitems.get(user).keySet();
+		HashMap<Float, Float> userindexrecommder = this.indexmap.get(user);
+		for (String item : removeitems) {
+			Float index;
+			if (userindexrecommder.containsKey(item)) {
+				index = userindexrecommder.get(item);
+			} else {
+				index = (float) (this.itemsusers.size() + this.topn.size()) / 2;
+			}
+			float r = index
+					/ (this.itemsusers.size() - this.usersitems.get(user)
+							.size());
+			this.rs.put(item, r);
+		}
 
+	}
 	public void getUserPr(String user, int n) {
 		if (this.topn.get(user).size() == 0) {
 			System.out.println(user);
@@ -149,7 +169,7 @@ public class Performation {
 			hitset.retainAll(this.removeusersitems.get(user).keySet());
 			// System.out.println("histset "+hitset);
 			float p = (float) hitset.size() / i;
-			System.out.println(user+"\t"+p);
+			System.out.println(user + "\t" + p);
 			// System.out.println(user + "\t" + String.valueOf(p));
 			this.ps.put(user, p);
 		}
@@ -162,8 +182,8 @@ public class Performation {
 		float lambda = 0.23f;
 		Performation performation = new Performation(lambda);
 		// System.exit(0);
-//		System.out.println(performation.removeusersitems);
-//		System.out.println(performation.reommdermap);
+		// System.out.println(performation.removeusersitems);
+		// System.out.println(performation.reommdermap);
 		ExecutorService pool3 = Executors.newFixedThreadPool(100);
 		for (String user : performation.commusers) {
 			// System.out.println(user);
@@ -177,11 +197,23 @@ public class Performation {
 			}
 		}
 		float countp = 0f;
-		for (String key : performation.ps.keySet()) {
-			countp += performation.ps.get(key);
+		for (Float value:performation.ps.values()){
+			countp+=value;
 		}
+//		for (String key : performation.ps.keySet()) {
+//			countp += performation.ps.get(key);
+//		}
+		float countr = 0f;
+		for(Float rvalue:performation.rs.values()){
+			countr+=rvalue;
+		}
+//		for(String key:performation.rs.keySet()){
+//			countr+=performation.rs.get(key);
+//		}
 		System.out.print("average_P is \t");
 		System.out.println(countp / performation.ps.size());
+		System.out.print("average_r is \t");
+		System.out.println(countr/performation.rs.size());
 		System.out.println("total cost"
 				+ String.valueOf(System.currentTimeMillis() - a));
 	}
@@ -203,6 +235,7 @@ class Mythread2 implements Runnable {
 		performation.Sortrecommder(user);
 		performation.indexreommder(user);
 		performation.getUserPr(this.user, this.n);
+		performation.getRankScore(user);
 		// TODO Auto-generated method stub
 
 	}
