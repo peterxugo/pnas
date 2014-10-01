@@ -12,10 +12,11 @@ public class Recommder {
 	ConcurrentHashMap<String, HashMap<String, Float>> wmartix;
 	HashMap<String, HashMap<String, Integer>> usersitems;
 	HashMap<String, HashMap<String, Integer>> itemsusers;
-
+	String file ;
 	HashMap<String, HashMap<String, Integer>> removeusersitems;
 
-	public Recommder(float lambda) throws IOException {
+	public Recommder(float lambda,String file) throws IOException {
+		this.file = file;
 		this.getBasicData(lambda);
 		// this.mapremovelinks = this.usersitems;
 		// TODO Auto-generated constructor stub
@@ -26,7 +27,7 @@ public class Recommder {
 		ConcurrentHashMap<String, HashMap<String, Float>> wmartix = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork
-				.getLinkList("/source/newnetflix");
+				.getLinkList(this.file);
 		HashMap<String, ArrayList<String[]>> result = createnetwork.randomDel(
 				links, 0.1f);
 		ArrayList<String[]> newlinks = result.get("newlinks");
@@ -41,15 +42,9 @@ public class Recommder {
 		this.usersitems = newlinksmap.get("usersitems");
 		this.itemsusers = newlinksmap.get("itemsusers");
 
-//		HashMap<String, HashMap<String, HashMap<String, Integer>>> a  =new HashMap<String, HashMap<String,HashMap<String,Integer>>>();
-//		a.put("usersitems", this.usersitems );
-//		a.put("itemsusers", this.itemsusers);
-		//netflix data user and item difference
-//		System.out.println(newlinksmap);
-//		System.out.println(removeusersitems);
+
 		TranslateMartix test = new TranslateMartix(newlinksmap);
-		// 鍒涘缓涓�涓彲閲嶇敤鍥哄畾绾跨▼鏁扮殑绾跨▼姹�
-//		System.out.println("start to multiprocess!");
+
 		long now = System.currentTimeMillis();
 		ExecutorService pool = Executors.newFixedThreadPool(100);
 		for (String item : test.itemsusers.keySet()) {
@@ -72,11 +67,10 @@ public class Recommder {
 	public HashMap<String, Float> getOneUserrecommder(String user) {
 		HashMap<String, Float> userrecommder = new HashMap<String, Float>();
 		HashSet<String> testitems = new HashSet<String>();
-//		System.out.println(this.itemsusers.keySet());
-//		System.out.println(this.usersitems.get(user));
+
 		testitems.addAll(this.itemsusers.keySet());
 		testitems.removeAll(this.usersitems.get(user).keySet());
-//		System.out.println(testitems);
+
 		for (String item : testitems) {
 			float score = 0;
 			HashSet<String> commonitems = new HashSet<String>();
@@ -86,14 +80,13 @@ public class Recommder {
 				continue;
 			}
 			for (String node : commonitems) {
-				// System.out.println(this.usersitems.get(user));
-				// System.out.println(node);
+
 				score += this.wmartix.get(item).get(node)
 						* this.usersitems.get(user).get(node);
 			}
 			userrecommder.put(item, score);
 		}
-		return userrecommder;// 瀛樺湪杩斿洖鍊兼槸绌虹殑鎯呭喌锛屽綋鎵�鏈夊垹闄ょ殑杈规病鏈夊緱鍒板垎鏁般��
+		return userrecommder;
 
 	}
 
@@ -102,7 +95,8 @@ public class Recommder {
 		System.out.println("start is " + String.valueOf(a));
 		// TODO Auto-generated method stub
 		float lambad = 0f;
-		Recommder test = new Recommder(lambad);
+		String file ="/source/new.data";
+		Recommder test = new Recommder(lambad,file);
 
 
 

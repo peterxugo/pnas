@@ -22,33 +22,48 @@ public class Performation {
 	HashMap<String, HashMap<String, Integer>> removeusersitems;
 	ConcurrentHashMap<String, HashMap<String, Float>> reommdermap;
 	ConcurrentHashMap<String, List<Map.Entry<String, Float>>> topn;
+	ConcurrentHashMap<String, HashSet<String>> topL;
 	ConcurrentHashMap<String, HashMap<Float, Float>> indexmap;
 	ConcurrentHashMap<String, Float> ps;
 	ConcurrentHashMap<String, Float> rs;
+	ConcurrentHashMap<String, Float> is;
+	ArrayList<Float> hs;
 	HashSet<String> commusers;
+	ConcurrentHashMap<String, HashSet<String>> hit;
+	String file;
 
-	public Performation(float lambda) throws IOException {
+	public Performation(float lambda, String file) throws IOException {
 		this.lambda = lambda;
+		this.file = file;
 		this.getRcommder();
+		this.hit = new ConcurrentHashMap<String, HashSet<String>>();
 		// System.out.println(this.removeusersitems);
 		// System.out.println(this.usersitems);
 		// System.out.println(this.itemsusers);
 		// System.out.println("usersitems\t"+this.usersitems);
 		this.topn = new ConcurrentHashMap<String, List<Entry<String, Float>>>();
+		this.topL = new ConcurrentHashMap<String, HashSet<String>>();
 		this.indexmap = new ConcurrentHashMap<String, HashMap<Float, Float>>();
 		this.ps = new ConcurrentHashMap<String, Float>();
 		this.rs = new ConcurrentHashMap<String, Float>();
+		this.is = new ConcurrentHashMap<String, Float>();
+		this.hs = new ArrayList<Float>();
+
 		// TODO Auto-generated constructor stub
 	}
 
 	public void getRcommder() throws IOException {
 
 		long a = System.currentTimeMillis();
+		System.out.println(this.file);
+
 		// System.out.println("start is " + String.valueOf(a));
-		float lambad = 0.23f;
-		Recommder recommder = new Recommder(lambad);
-		this.itemsusers = recommder.itemsusers;
-		this.usersitems = recommder.usersitems;
+		Recommder recommder = new Recommder(this.lambda, this.file);
+		CreateNetwork rawnetwork = new CreateNetwork();
+		HashMap<String, HashMap<String, HashMap<String, Integer>>> network = rawnetwork
+				.mapLink(rawnetwork.getLinkList(file));
+		this.itemsusers = network.get("itemsusers");
+		this.usersitems = network.get("usersitems");
 		this.removeusersitems = recommder.removeusersitems;
 
 		ConcurrentHashMap<String, HashMap<String, Float>> reommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
@@ -109,44 +124,49 @@ public class Performation {
 
 	public void indexreommder(String user) {
 		List<Entry<String, Float>> usertopn = this.topn.get(user);
-		HashMap<Float, Float> indexmap = new HashMap<Float, Float>();
+		HashMap<Float, Float> userindexmap = new HashMap<Float, Float>();
 		if (usertopn.size() == 0) {
-			this.indexmap.put(user, indexmap);
+			System.out.println(user + "\t topn is empty!");
 		} else {
-			Float before = usertopn.get(0).getValue();
+			float before = usertopn.get(0).getValue();
 			int start = 0;
 			int end = 0;
 			ArrayList<Float> samescore = new ArrayList<Float>();
 
 			for (int i = 0; i < usertopn.size(); i++) {
-				Float now = usertopn.get(i).getValue();
+				float now = usertopn.get(i).getValue();
 				if (now == before) {
 					samescore.add(now);
 					end = i;
 				} else {
 					float index = (float) (start + end) / 2;
-					for (Float item : samescore) {
-						indexmap.put(item, index);
+					for (float item : samescore) {
+						userindexmap.put(item, index);
 					}
 					start = i;
 					samescore.clear();
 					samescore.add(now);
+					before = now;
 				}
 			}
-			this.indexmap.put(user, indexmap);
+			this.indexmap.put(user, userindexmap);
 		}
 
 	}
+
 	public void getRankScore(String user) {
 		Set<String> removeitems = this.removeusersitems.get(user).keySet();
 		HashMap<Float, Float> userindexrecommder = this.indexmap.get(user);
 		for (String item : removeitems) {
-			Float index;
-			if (userindexrecommder.containsKey(item)) {
-				index = userindexrecommder.get(item);
+			float index;
+			Float recommderscore = this.reommdermap.get(user).get(item);
+			if (userindexrecommder.containsKey(recommderscore)) {
+				index = userindexrecommder.get(recommderscore);
+
 			} else {
-				index = (float) (this.itemsusers.size() + this.topn.size()) / 2;
+				index = (float) (this.itemsusers.size() + 20) / 2;
 			}
+
 			float r = index
 					/ (this.itemsusers.size() - this.usersitems.get(user)
 							.size());
@@ -154,24 +174,68 @@ public class Performation {
 		}
 
 	}
-	public void getUserPr(String user, int n) {
+
+	public void getTopL(int L, String user) {
+		HashSet<String> hitset = new HashSet<String>();
+		// System.out.println("this.topn" + this.topn + "user " + user);
+		int i;
+		for (i = 0; i < L & i < this.topn.get(user).size(); i++) {
+			Entry<String, Float> item = this.topn.get(user).get(i);
+			hitset.add(item.getKey());
+			// System.out.println(hitset);
+		}
+		this.topL.put(user, hitset);
+	}
+
+	public void getUserPr(String user) {
 		if (this.topn.get(user).size() == 0) {
-			System.out.println(user);
+			// System.out.println(user);
 		} else {
 			HashSet<String> hitset = new HashSet<String>();
 			// System.out.println("this.topn" + this.topn + "user " + user);
-			int i;
-			for (i = 0; i < n & i < this.topn.get(user).size(); i++) {
-				Entry<String, Float> item = this.topn.get(user).get(i);
-				hitset.add(item.getKey());
-				// System.out.println(hitset);
-			}
+			HashSet<String> topLset = this.topL.get(user);
+			hitset.addAll(topLset);
 			hitset.retainAll(this.removeusersitems.get(user).keySet());
-			// System.out.println("histset "+hitset);
-			float p = (float) hitset.size() / i;
-			System.out.println(user + "\t" + p);
+			this.hit.put(user, hitset);
+			float p = (float) hitset.size() / topLset.size();
+			// System.out.println(user + "\t" + p);
 			// System.out.println(user + "\t" + String.valueOf(p));
 			this.ps.put(user, p);
+		}
+
+	}
+	public void getSurprisal(String user) {
+		HashSet<String> topLitems = this.topL.get(user);
+		int usernum = this.usersitems.size();
+		float counti = 0f;
+		for (String item : topLitems) {
+			float a = (float) usernum / this.itemsusers.get(item).size();
+			float i = (float) (Math.log(a) / Math.log(2));
+			counti += i;
+		}
+		this.is.put(user, counti / topLitems.size());
+
+	}
+	
+	
+	public void getPersonalization() {
+		HashSet<String> userset = this.commusers;
+		String[] userlist = new String[userset.size()];
+		userset.toArray(userlist);
+		
+		for (int i = 0; i < userlist.length; i++) {
+			HashSet<String> sameset = new HashSet<String>();
+			HashSet<String> userrecommder = this.topL.get(userlist[i]);
+			for (int j = i+1; j < userlist.length; j++) {
+				HashSet<String> comparerecommder = this.topL.get(userlist[j]);
+				sameset.addAll(userrecommder);
+				sameset.retainAll(comparerecommder);
+				int samesize = sameset.size();
+				float h = 1 - ((float) samesize /userrecommder.size());
+//				System.out.println(h);
+				this.hs.add(h);
+				sameset.clear();
+			}
 		}
 
 	}
@@ -180,7 +244,8 @@ public class Performation {
 		// TODO Auto-generated method stub
 		long a = System.currentTimeMillis();
 		float lambda = 0.23f;
-		Performation performation = new Performation(lambda);
+		String file = "/source/newnetflix";
+		Performation performation = new Performation(lambda, file);
 		// System.exit(0);
 		// System.out.println(performation.removeusersitems);
 		// System.out.println(performation.reommdermap);
@@ -197,25 +262,49 @@ public class Performation {
 			}
 		}
 		float countp = 0f;
-		for (Float value:performation.ps.values()){
-			countp+=value;
+		for (Float value : performation.ps.values()) {
+			countp += value;
 		}
-//		for (String key : performation.ps.keySet()) {
-//			countp += performation.ps.get(key);
-//		}
+		// for (String key : performation.ps.keySet()) {
+		// countp += performation.ps.get(key);
+		// }
 		float countr = 0f;
-		for(Float rvalue:performation.rs.values()){
-			countr+=rvalue;
+		for (Float rvalue : performation.rs.values()) {
+			countr += rvalue;
 		}
-//		for(String key:performation.rs.keySet()){
-//			countr+=performation.rs.get(key);
-//		}
+		float counti = 0f;
+		for (float ivalues : performation.is.values()) {
+			counti += ivalues;
+		}
+
+		// for(String key:performation.rs.keySet()){
+		// countr+=performation.rs.get(key);
+		// }
 		System.out.print("average_P is \t");
 		System.out.println(countp / performation.ps.size());
 		System.out.print("average_r is \t");
-		System.out.println(countr/performation.rs.size());
+		System.out.println(countr / performation.rs.size());
+		System.out.print("average_i is \t");
+		System.out.println(counti / performation.rs.size());
 		System.out.println("total cost"
 				+ String.valueOf(System.currentTimeMillis() - a));
+
+		int count = 0;
+		for (HashSet<String> hitkey : performation.hit.values()) {
+			count += hitkey.size();
+		}
+		int removecount = 0;
+		for (String key : performation.removeusersitems.keySet()) {
+			removecount += performation.removeusersitems.get(key).size();
+		}
+
+		System.out.println(count + "\t" + removecount);
+		performation.getPersonalization();
+		float hscount = 0f;
+		for (Float item : performation.hs) {
+			hscount += item;
+		}
+		System.out.println("hscoutn" + hscount / performation.hs.size());
 	}
 }
 
@@ -233,8 +322,11 @@ class Mythread2 implements Runnable {
 	@Override
 	public void run() {
 		performation.Sortrecommder(user);
+		performation.getTopL(n, user);
 		performation.indexreommder(user);
-		performation.getUserPr(this.user, this.n);
+
+		performation.getUserPr(user);
+		performation.getSurprisal(user);
 		performation.getRankScore(user);
 		// TODO Auto-generated method stub
 
