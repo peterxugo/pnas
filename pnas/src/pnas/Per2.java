@@ -196,7 +196,7 @@ public class Per2 {
 	
 	public static void main(String[] agrs) throws IOException {
 //		Per2 test = new Per2(0, "/source/test.data");
-		int n =3;
+		int n =20;
 		float lambda = 0.23f;
 		String filename = "/source/newnetflix";
 		Per2 per = new Per2(lambda, filename);
