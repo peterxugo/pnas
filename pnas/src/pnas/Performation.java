@@ -16,9 +16,10 @@ import java.util.concurrent.Executors;
 
 public class Performation {
 	float lambda;
-	HashMap<String, HashMap<String, Integer>> usersitems;
-	HashMap<String, HashMap<String, Integer>> itemsusers;
-
+	HashMap<String, HashMap<String, Integer>> oldusersitems;
+	HashMap<String, HashMap<String, Integer>> olditemsusers;
+	HashMap<String, HashMap<String, Integer>> newusersitems;
+	HashMap<String, HashMap<String, Integer>> newitemsusers;
 	HashMap<String, HashMap<String, Integer>> removeusersitems;
 	ConcurrentHashMap<String, HashMap<String, Float>> reommdermap;
 	ConcurrentHashMap<String, List<Map.Entry<String, Float>>> topn;
@@ -31,6 +32,7 @@ public class Performation {
 	HashSet<String> commusers;
 	ConcurrentHashMap<String, HashSet<String>> hit;
 	String file;
+
 
 	public Performation(float lambda, String file) throws IOException {
 		this.lambda = lambda;
@@ -62,8 +64,13 @@ public class Performation {
 		CreateNetwork rawnetwork = new CreateNetwork();
 		HashMap<String, HashMap<String, HashMap<String, Integer>>> network = rawnetwork
 				.mapLink(rawnetwork.getLinkList(file));
-		this.itemsusers = network.get("itemsusers");
-		this.usersitems = network.get("usersitems");
+		
+		this.olditemsusers = network.get("itemsusers");
+		this.oldusersitems=network.get("usersitems");
+		
+		
+		this.newusersitems = recommder.usersitems;
+		this.newitemsusers = recommder.itemsusers;
 		this.removeusersitems = recommder.removeusersitems;
 
 		ConcurrentHashMap<String, HashMap<String, Float>> reommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
@@ -124,6 +131,7 @@ public class Performation {
 
 	public void indexreommder(String user) {
 		List<Entry<String, Float>> usertopn = this.topn.get(user);
+		
 		HashMap<Float, Float> userindexmap = new HashMap<Float, Float>();
 		if (usertopn.size() == 0) {
 			System.out.println(user + "\t topn is empty!");
@@ -134,6 +142,7 @@ public class Performation {
 			ArrayList<Float> samescore = new ArrayList<Float>();
 
 			for (int i = 0; i < usertopn.size(); i++) {
+//				System.out.println(i+"\t"+before);
 				float now = usertopn.get(i).getValue();
 				if (now == before) {
 					samescore.add(now);
@@ -143,11 +152,17 @@ public class Performation {
 					for (float item : samescore) {
 						userindexmap.put(item, index);
 					}
-					start = i;
+					start =  i;
+					end = i;
+//					System.out.println("end"+end+"\t"+start);
 					samescore.clear();
 					samescore.add(now);
 					before = now;
 				}
+			}
+			float index = (float) (start + end) / 2;
+			for (float item : samescore) {
+				userindexmap.put(item, index);
 			}
 			this.indexmap.put(user, userindexmap);
 		}
@@ -157,18 +172,19 @@ public class Performation {
 	public void getRankScore(String user) {
 		Set<String> removeitems = this.removeusersitems.get(user).keySet();
 		HashMap<Float, Float> userindexrecommder = this.indexmap.get(user);
+		
 		for (String item : removeitems) {
 			float index;
 			Float recommderscore = this.reommdermap.get(user).get(item);
 			if (userindexrecommder.containsKey(recommderscore)) {
 				index = userindexrecommder.get(recommderscore);
-
 			} else {
-				index = (float) (this.itemsusers.size() + 20) / 2;
+				index = (float) (this.olditemsusers.size() + userindexrecommder.size()- this.newusersitems.get(user)
+						.size()) / 2;
 			}
-
+//			System.out.println("index\t"+index);
 			float r = index
-					/ (this.itemsusers.size() - this.usersitems.get(user)
+					/ (this.olditemsusers.size() - this.newusersitems.get(user)
 							.size());
 			this.rs.put(item, r);
 		}
@@ -206,10 +222,10 @@ public class Performation {
 	}
 	public void getSurprisal(String user) {
 		HashSet<String> topLitems = this.topL.get(user);
-		int usernum = this.usersitems.size();
+		int usernum = this.oldusersitems.size();
 		float counti = 0f;
 		for (String item : topLitems) {
-			float a = (float) usernum / this.itemsusers.get(item).size();
+			float a = (float) usernum / this.olditemsusers.get(item).size();
 			float i = (float) (Math.log(a) / Math.log(2));
 			counti += i;
 		}
@@ -244,7 +260,7 @@ public class Performation {
 		// TODO Auto-generated method stub
 		long a = System.currentTimeMillis();
 		float lambda = 0.23f;
-		String file = "/source/newnetflix";
+		String file = "/source/delicious.data";
 		Performation performation = new Performation(lambda, file);
 		// System.exit(0);
 		// System.out.println(performation.removeusersitems);
@@ -280,13 +296,26 @@ public class Performation {
 		// for(String key:performation.rs.keySet()){
 		// countr+=performation.rs.get(key);
 		// }
+//		System.out.println("removeusersitems\t"+performation.removeusersitems+"\treommdermap"+performation.reommdermap);
+//		System.out.println("indexmap"+performation.indexmap);
+//		System.out.println(performation.topn+"\t"+performation.topL);
+		
 		System.out.print("average_P is \t");
 		System.out.println(countp / performation.ps.size());
+		int removecount = 0;
+		for (String key : performation.removeusersitems.keySet()) {
+			removecount += performation.removeusersitems.get(key).size();
+		}
+		float ep = performation.olditemsusers.size()*performation.oldusersitems.size()/removecount;
+		System.out.println("ep is  \t "+ ep);
+		
+		
+		/***
 		System.out.print("average_r is \t");
 		System.out.println(countr / performation.rs.size());
 		System.out.print("average_i is \t");
 		System.out.println(counti / performation.rs.size());
-		System.out.println("total cost"
+		System.out.println("total cost\t"
 				+ String.valueOf(System.currentTimeMillis() - a));
 
 		int count = 0;
@@ -305,6 +334,7 @@ public class Performation {
 			hscount += item;
 		}
 		System.out.println("hscoutn" + hscount / performation.hs.size());
+		***/
 	}
 }
 
@@ -326,8 +356,8 @@ class Mythread2 implements Runnable {
 		performation.indexreommder(user);
 
 		performation.getUserPr(user);
-		performation.getSurprisal(user);
-		performation.getRankScore(user);
+//		performation.getSurprisal(user);
+//		performation.getRankScore(user);
 		// TODO Auto-generated method stub
 
 	}
