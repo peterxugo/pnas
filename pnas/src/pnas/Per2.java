@@ -88,9 +88,12 @@ public class Per2 {
 						// TODO Auto-generated method stub
 						if (o2.getValue() - o1.getValue() > 0) {
 							return 1;
-						} else {
+						} else if (o2.getValue() - o1.getValue() < 0) {
 							return -1;
+						}else{
+							return 0;
 						}
+						
 					}
 				});
 		return sortresult;
@@ -203,6 +206,7 @@ public class Per2 {
 		for (int k = 0; k < 101; k++) {
 
 			float lambda = k * 0.01f;
+			System.out.print(lambda+"\t");
 			Per2 per = new Per2(lambda, oldlinksmap, newlinksmap,
 					removelinksmap);
 
