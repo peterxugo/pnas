@@ -34,11 +34,10 @@ public class Per2 {
 	private HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap;
 	private HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap;
 
-	Per2(	float lambda,
+	Per2(float lambda,
 			HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap,
 			HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap,
-			HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap
-			) {
+			HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap) {
 		this.lambda = lambda;
 		this.newlinksmap = newlinksmap;
 		this.removelinksmap = removelinksmap;
@@ -53,13 +52,13 @@ public class Per2 {
 		this.hs = new ConcurrentHashMap<String, Float>();
 		this.recommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		this.getReommder();
-		
+
 	}
 
-	public void getReommder()   {
+	public void getReommder() {
 
-
-		Recommder recommder = new Recommder(this.lambda, this.newlinksmap, this.removelinksmap);
+		Recommder recommder = new Recommder(this.lambda, this.newlinksmap,
+				this.removelinksmap);
 
 		ExecutorService pool = Executors.newFixedThreadPool(100);
 		for (String user : this.removeusersitems.keySet()) {
@@ -70,8 +69,8 @@ public class Per2 {
 		pool.shutdown();
 		while (true) {
 			if (pool.isTerminated()) {
-//				System.out.println("recommdermap size is \t"
-//						+ this.recommdermap.size());
+				// System.out.println("recommdermap size is \t"
+				// + this.recommdermap.size());
 				break;
 			}
 		}
@@ -79,26 +78,22 @@ public class Per2 {
 	}
 	public List<Entry<String, Float>> sortRecomdermap(String user) {
 		HashMap<String, Float> userrecommderlist = this.recommdermap.get(user);
-		if (this.recommdermap.get(user) == null) {
-			return null;
-		} else {
-			List<Map.Entry<String, Float>> sortresult = new ArrayList<Map.Entry<String, Float>>(
-					userrecommderlist.entrySet());
-			Collections.sort(sortresult,
-					new Comparator<Map.Entry<String, Float>>() {
+		List<Map.Entry<String, Float>> sortresult = new ArrayList<Map.Entry<String, Float>>(
+				userrecommderlist.entrySet());
+		Collections.sort(sortresult,
+				new Comparator<Map.Entry<String, Float>>() {
 
-						public int compare(Entry<String, Float> o1,
-								Entry<String, Float> o2) {
-							// TODO Auto-generated method stub
-							if (o2.getValue() - o1.getValue() > 0) {
-								return 1;
-							} else {
-								return -1;
-							}
+					public int compare(Entry<String, Float> o1,
+							Entry<String, Float> o2) {
+						// TODO Auto-generated method stub
+						if (o2.getValue() - o1.getValue() > 0) {
+							return 1;
+						} else {
+							return -1;
 						}
-					});
-			return sortresult;
-		}
+					}
+				});
+		return sortresult;
 
 	}
 
@@ -188,54 +183,59 @@ public class Per2 {
 		this.is.put(user, (float) iavrage);
 		return iavrage;
 	}
-	
+
 	public static void main(String[] agrs) throws IOException {
-		
+
 		String filename = "/source/newnetflix";
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork.getLinkList(filename);
-		HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap = createnetwork.mapLink(links);
+		HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap = createnetwork
+				.mapLink(links);
 		HashMap<String, ArrayList<String[]>> a = createnetwork.randomDel(links,
 				0.1f);
-		HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap = createnetwork.mapLink(a.get("newlinks"));
-		HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap = createnetwork.mapLink(a.get("dellinks"));
-		
+		HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap = createnetwork
+				.mapLink(a.get("newlinks"));
+		HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap = createnetwork
+				.mapLink(a.get("dellinks"));
+
 		int n = 20;
-		
-		
-		for(int k =0;k<101;k++){
-			
-		
-			float lambda = k*0.01f;
-			Per2 per = new Per2(lambda,oldlinksmap,newlinksmap,removelinksmap);
-	
+
+		for (int k = 0; k < 101; k++) {
+
+			float lambda = k * 0.01f;
+			Per2 per = new Per2(lambda, oldlinksmap, newlinksmap,
+					removelinksmap);
+
 			ExecutorService pool2 = Executors.newFixedThreadPool(100);
 			for (String user : per.removeusersitems.keySet()) {
+				if (per.recommdermap.get(user) == null) {
+					continue;
+				}
 				pool2.execute(new PerRunnable(per, user, n));
 			}
 			pool2.shutdown();
 			while (true) {
 				if (pool2.isTerminated()) {
-	//				System.out.println("complete!");
+					// System.out.println("complete!");
 					break;
 				}
 			}
-	
+
 			float rcount = 0;
 			for (Float r : per.rs.values()) {
 				rcount += r;
 			}
-			System.out.print( rcount / per.rs.size()+"\t");
+			System.out.print(rcount / per.rs.size() + "\t");
 			// averages rankscore
-	
+
 			float pcount = 0;
 			for (float p : per.ps.values()) {
 				pcount += p;
 			}
-			System.out.print( pcount / per.ps.size()+"\t");
+			System.out.print(pcount / per.ps.size() + "\t");
 			int removecount = 0;
 			// averages precision
-	
+
 			for (String user : per.removeusersitems.keySet()) {
 				removecount += per.removeusersitems.get(user).size();
 			}
@@ -243,9 +243,9 @@ public class Per2 {
 			int usersmun = per.oldusersitems.size();
 			float p = pcount / per.ps.size();
 			float ep = p * itemsnum * usersmun / removecount;
-			System.out.print(ep+"\t");
+			System.out.print(ep + "\t");
 			// averages ep
-	
+
 			float icount = 0;
 			for (float i : per.is.values()) {
 				icount += i;
