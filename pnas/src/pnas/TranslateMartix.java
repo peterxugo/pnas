@@ -15,7 +15,7 @@ public class TranslateMartix {
 
 	public TranslateMartix(
 			HashMap<String, HashMap<String, HashMap<String, Integer>>> linksmap) {
-		// 传入包含usersitems和usersitems字典的字典
+		// 浼犲叆鍖呭惈usersitems鍜寀sersitems瀛楀吀鐨勫瓧鍏�
 		// TODO Auto-generated constructor stub
 		this.usersitems = linksmap.get("usersitems");
 		this.itemsusers = linksmap.get("itemsusers");
@@ -70,7 +70,7 @@ public class TranslateMartix {
 				.mapLink(newlinks);
 
 		TranslateMartix test = new TranslateMartix(linksmap);
-		// 创建一个可重用固定线程数的线程池
+		// 鍒涘缓涓�涓彲閲嶇敤鍥哄畾绾跨▼鏁扮殑绾跨▼姹�
 		System.out.println("start to multiprocess!");
 		long now = System.currentTimeMillis();
 

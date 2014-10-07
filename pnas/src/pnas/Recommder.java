@@ -12,39 +12,26 @@ public class Recommder {
 	ConcurrentHashMap<String, HashMap<String, Float>> wmartix;
 	HashMap<String, HashMap<String, Integer>> usersitems;
 	HashMap<String, HashMap<String, Integer>> itemsusers;
-	String file ;
+	HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap;
 	HashMap<String, HashMap<String, Integer>> removeusersitems;
 
-	public Recommder(float lambda,String file) throws IOException {
-		this.file = file;
-		this.getBasicData(lambda);
-		// this.mapremovelinks = this.usersitems;
-		// TODO Auto-generated constructor stub
-	}
-
-	public void getBasicData(float lambda) throws IOException {
-
-		ConcurrentHashMap<String, HashMap<String, Float>> wmartix = new ConcurrentHashMap<String, HashMap<String, Float>>();
-		CreateNetwork createnetwork = new CreateNetwork();
-		ArrayList<String[]> links = createnetwork
-				.getLinkList(this.file);
-		HashMap<String, ArrayList<String[]>> result = createnetwork.randomDel(
-				links, 0.1f);
-		ArrayList<String[]> newlinks = result.get("newlinks");
-		ArrayList<String[]> removelinks = result.get("dellinks");
-		HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap = createnetwork
-				.mapLink(newlinks);
-		HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmaps = createnetwork
-				.mapLink(removelinks);
-		HashMap<String, HashMap<String, Integer>> removeusersitems = removelinksmaps
-				.get("usersitems");
-		this.removeusersitems = removeusersitems;
+	public Recommder(
+			float lambda,
+			HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap,
+			HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmaps) {
+		this.removeusersitems = removelinksmaps.get("usersitems");
+		this.newlinksmap = newlinksmap;
 		this.usersitems = newlinksmap.get("usersitems");
 		this.itemsusers = newlinksmap.get("itemsusers");
+		this.wmartix = new ConcurrentHashMap<String, HashMap<String, Float>>();
+		this.getWmartix(lambda, this.wmartix);
 
+	}
 
-		TranslateMartix test = new TranslateMartix(newlinksmap);
+	public void getWmartix(float lambda,
+			ConcurrentHashMap<String, HashMap<String, Float>> wmartix) {
 
+		TranslateMartix test = new TranslateMartix(this.newlinksmap);
 		long now = System.currentTimeMillis();
 		ExecutorService pool = Executors.newFixedThreadPool(100);
 		for (String item : test.itemsusers.keySet()) {
@@ -53,10 +40,10 @@ public class Recommder {
 		pool.shutdown();
 		while (true) {
 			if (pool.isTerminated()) {
-				System.out.println("wmartix used secondes\t"
-						+ String.valueOf(System.currentTimeMillis() - now));
-				System.out.println("wmartix size is \t" + wmartix.size());
-				this.wmartix = wmartix;
+//				System.out.println("wmartix used secondes\t"
+//						+ String.valueOf(System.currentTimeMillis() - now));
+//				System.out.println("wmartix size is \t" + wmartix.size());
+				// this.wmartix = wmartix;
 				break;
 			}
 
@@ -87,46 +74,6 @@ public class Recommder {
 			userrecommder.put(item, score);
 		}
 		return userrecommder;
-
-	}
-
-	public static void main(String[] args) throws IOException {
-		long a = System.currentTimeMillis();
-		System.out.println("start is " + String.valueOf(a));
-		// TODO Auto-generated method stub
-		float lambad = 0f;
-		String file ="/source/new.data";
-		Recommder test = new Recommder(lambad,file);
-
-
-
-		ConcurrentHashMap<String, HashMap<String, Float>> reommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
-		HashSet<String> commusers = new HashSet<String>();
-//		System.out.println("est.removeusersitems"+test.removeusersitems);
-//		System.out.println("test.usersitems"+test.usersitems);
-		commusers.addAll(test.removeusersitems.keySet());
-		commusers.retainAll(test.usersitems.keySet());
-		
-		ExecutorService pool2 = Executors.newFixedThreadPool(100);
-		for (String user : commusers) {
-			pool2.execute(new Mythread(user, test, reommdermap));
-		}
-		pool2.shutdown();
-		while (true) {
-			if (pool2.isTerminated()) {
-				System.out.println("ok!");
-				System.out.println("cost seconds is "
-						+ String.valueOf(System.currentTimeMillis() - a));
-				System.out.println("reommdermap.size()"+reommdermap.size());
-//				System.out.println(test.usersitems);
-//				System.out.println(test.removeusersitems);
-				System.out.println("reommdermap"+reommdermap);
-				break;
-			}
-		}
-		System.out.println(test.usersitems);
-		System.out.println(test.itemsusers);
-		System.out.println(test.removeusersitems);
 
 	}
 

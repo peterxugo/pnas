@@ -31,51 +31,47 @@ public class Per2 {
 	ConcurrentHashMap<String, Float> is;
 	ConcurrentHashMap<String, Float> hs;
 	ConcurrentHashMap<String, HashMap<String, Float>> recommdermap;
+	private HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap;
+	private HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap;
 
-	Per2(float lambda, String filename) {
-		this.filename = filename;
+	Per2(	float lambda,
+			HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap,
+			HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap,
+			HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap
+			) {
 		this.lambda = lambda;
-		// this.topn = new ConcurrentHashMap<String, String[]>();
+		this.newlinksmap = newlinksmap;
+		this.removelinksmap = removelinksmap;
+		this.olditemsusers = oldlinksmap.get("itemsusers");
+		this.oldusersitems = oldlinksmap.get("usersitems");
+		this.newitemsusers = newlinksmap.get("itemsusers");
+		this.newusersitems = newlinksmap.get("usersitems");
+		this.removeusersitems = removelinksmap.get("usersitems");
 		this.rs = new ConcurrentHashMap<String, Float>();
 		this.ps = new ConcurrentHashMap<String, Float>();
 		this.is = new ConcurrentHashMap<String, Float>();
 		this.hs = new ConcurrentHashMap<String, Float>();
 		this.recommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
-		// initialized variables
-		try {
-			this.getBasicData();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
+		this.getReommder();
+		
 	}
 
-	public void getBasicData() throws IOException {
-		CreateNetwork rawnetwork = new CreateNetwork();
-		HashMap<String, HashMap<String, HashMap<String, Integer>>> network = rawnetwork
-				.mapLink(rawnetwork.getLinkList(this.filename));
+	public void getReommder()   {
 
-		this.olditemsusers = network.get("itemsusers");
-		this.oldusersitems = network.get("usersitems");
-		// get old network
 
-		Recommder recommder = new Recommder(this.lambda, this.filename);
-		this.newusersitems = recommder.usersitems;
-		this.newitemsusers = recommder.itemsusers;
-		this.removeusersitems = recommder.removeusersitems;
-		// new network
+		Recommder recommder = new Recommder(this.lambda, this.newlinksmap, this.removelinksmap);
+
 		ExecutorService pool = Executors.newFixedThreadPool(100);
 		for (String user : this.removeusersitems.keySet()) {
 			if (this.newusersitems.containsKey(user)) {
 				pool.execute(new Mythread(user, recommder, this.recommdermap));
-			} 
+			}
 		}
 		pool.shutdown();
 		while (true) {
 			if (pool.isTerminated()) {
-				System.out.println("recommdermap size is \t"
-						+ this.recommdermap.size());
+//				System.out.println("recommdermap size is \t"
+//						+ this.recommdermap.size());
 				break;
 			}
 		}
@@ -109,7 +105,7 @@ public class Per2 {
 	public HashMap<String, Float> getUserItemsIndex(
 			List<Entry<String, Float>> sortresult) {
 		HashMap<String, Float> itemindex = new HashMap<String, Float>();
-//		System.out.println(sortresult);
+		// System.out.println(sortresult);
 		for (int i = 0; i < sortresult.size();) {
 			float score = sortresult.get(i).getValue();
 			int j = i + 1;
@@ -140,8 +136,7 @@ public class Per2 {
 
 	}
 
-	public float getUserRankScore(String user,
-			HashMap<String, Float> itemindex) {
+	public float getUserRankScore(String user, HashMap<String, Float> itemindex) {
 		Set<String> userremoveitems = this.removeusersitems.get(user).keySet();
 		float indexcount = 0f;
 		float index;
@@ -159,7 +154,7 @@ public class Per2 {
 		}
 		float rcount = indexcount / useritemcandidatesize;
 		float ravrage = rcount / userremoveitems.size();
-		this.rs.put(user,ravrage);
+		this.rs.put(user, ravrage);
 		return ravrage;
 	}
 
@@ -170,111 +165,105 @@ public class Per2 {
 		}
 		return usertopn;
 	}
-	public float getPresion(String user,Set<String> usertopn) {
+	public float getPresion(String user, Set<String> usertopn) {
 		float p;
 		Set<String> hit = new HashSet<String>();
 		hit.addAll(usertopn);
 		hit.retainAll(this.removeusersitems.get(user).keySet());
-		p = (float)hit.size()/usertopn.size();
+		p = (float) hit.size() / usertopn.size();
 		this.ps.put(user, p);
 		return p;
 	}
-	public double getSurprisal(String user,Set<String> topn){
+	public double getSurprisal(String user, Set<String> topn) {
 		double i = 0;
-		double icount=0;
+		double icount = 0;
 		int usernum = this.oldusersitems.size();
-		for(String item:topn){
-			float randomly_selected = (float)this.olditemsusers.get(item).size()/usernum;
-			i = Math.log(1/randomly_selected)/Math.log(2);
-			icount+=i;
+		for (String item : topn) {
+			float randomly_selected = (float) this.olditemsusers.get(item)
+					.size() / usernum;
+			i = Math.log(1 / randomly_selected) / Math.log(2);
+			icount += i;
 		}
-		double iavrage = icount/topn.size();
+		double iavrage = icount / topn.size();
 		this.is.put(user, (float) iavrage);
-	return iavrage;
+		return iavrage;
 	}
 	
-	
 	public static void main(String[] agrs) throws IOException {
-//		Per2 test = new Per2(0, "/source/test.data");
-		int n =20;
-		float lambda = 0.23f;
+		
 		String filename = "/source/newnetflix";
-		Per2 per = new Per2(lambda, filename);
-//		System.out.println(test.oldusersitems + "\n" + test.newusersitems
-//				+ "\n" + test.removeusersitems + "\n" + test.recommdermap);
-//		for (String user : test.recommdermap.keySet()) {
-//			List<Entry<String, Float>> sortresult = test.sortRecomdermap(user);
-//			Set<String> topn = test.getTopn(40, sortresult);
-//			HashMap<String, Float> itemindex = test
-//					.getUserItemsIndex(sortresult);
-//			float ravrage = test.getUserRankScore(user, itemindex);
-//			float p = test.getPresion(user, topn);
-//			double i = test.getSurprisal(user, topn);
-//			System.out.println(user + "\t" + sortresult + "\t" + topn + "\n"
-//					+ itemindex + "\t" + ravrage+"\t"+p+"\t"+i);
-//			System.out.println(test.rs+"\t"+test.ps+"\t"+test.is);
-//
-//		}
-		ExecutorService pool2 = Executors.newFixedThreadPool(100);
-		for(String user : per.removeusersitems.keySet()){
-			pool2.execute(new PerRunnable(per, user, n));
-		}
-		pool2.shutdown();
-		while(true){
-			if (pool2.isTerminated()){
-				System.out.println("complete!");
-				break;
+		CreateNetwork createnetwork = new CreateNetwork();
+		ArrayList<String[]> links = createnetwork.getLinkList(filename);
+		HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap = createnetwork.mapLink(links);
+		HashMap<String, ArrayList<String[]>> a = createnetwork.randomDel(links,
+				0.1f);
+		HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap = createnetwork.mapLink(a.get("newlinks"));
+		HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap = createnetwork.mapLink(a.get("dellinks"));
+		
+		int n = 20;
+		
+		
+		for(int k =0;k<101;k++){
+			
+		
+			float lambda = k*0.01f;
+			Per2 per = new Per2(lambda,oldlinksmap,newlinksmap,removelinksmap);
+	
+			ExecutorService pool2 = Executors.newFixedThreadPool(100);
+			for (String user : per.removeusersitems.keySet()) {
+				pool2.execute(new PerRunnable(per, user, n));
 			}
+			pool2.shutdown();
+			while (true) {
+				if (pool2.isTerminated()) {
+	//				System.out.println("complete!");
+					break;
+				}
+			}
+	
+			float rcount = 0;
+			for (Float r : per.rs.values()) {
+				rcount += r;
+			}
+			System.out.print( rcount / per.rs.size()+"\t");
+			// averages rankscore
+	
+			float pcount = 0;
+			for (float p : per.ps.values()) {
+				pcount += p;
+			}
+			System.out.print( pcount / per.ps.size()+"\t");
+			int removecount = 0;
+			// averages precision
+	
+			for (String user : per.removeusersitems.keySet()) {
+				removecount += per.removeusersitems.get(user).size();
+			}
+			int itemsnum = per.olditemsusers.size();
+			int usersmun = per.oldusersitems.size();
+			float p = pcount / per.ps.size();
+			float ep = p * itemsnum * usersmun / removecount;
+			System.out.print(ep+"\t");
+			// averages ep
+	
+			float icount = 0;
+			for (float i : per.is.values()) {
+				icount += i;
+			}
+			System.out.println(icount / per.is.size());
+			// averages i
 		}
-		
-		float rcount = 0;
-		for( Float r:per.rs.values())
-		{
-			rcount+=r;
-		}
-		System.out.println("r is \t"+rcount/per.rs.size());
-		// averages rankscore
-		
-		
-		
-		
-		float pcount = 0;
-		for(float p :per.ps.values()){
-			pcount+=p;
-		}
-		System.out.println("p is \t"+pcount/per.ps.size());
-		int removecount =0;
-		//averages precision
-		
-		for(String user:per.removeusersitems.keySet()){
-			removecount+=per.removeusersitems.get(user).size();
-		}
-		int itemsnum = per.olditemsusers.size();
-		int usersmun = per.oldusersitems.size();
-		float p = pcount/per.ps.size();
-		float ep = p*itemsnum*usersmun/removecount;
-		System.out.println("ep is \t "+ep);
-		//averages ep
-		
-		float icount=0;
-		for (float i:per.is.values()){
-			icount+=i;
-		}
-		System.out.println("i is \t"+icount/per.is.size());
-		//averages i
 	}
 
 }
 
-
-
-
-
-class PerRunnable implements Runnable{
-	Per2 per;String user;int n;
-	PerRunnable(Per2 per,String user,int n){
-		this.per= per;
-		this.user= user;
+class PerRunnable implements Runnable {
+	Per2 per;
+	String user;
+	int n;
+	PerRunnable(Per2 per, String user, int n) {
+		this.per = per;
+		this.user = user;
 		this.n = n;
 	}
 	@Override
@@ -285,7 +274,7 @@ class PerRunnable implements Runnable{
 		per.getUserRankScore(this.user, itemindex);
 		per.getPresion(this.user, topn);
 		per.getSurprisal(this.user, topn);
-		
+
 	}
-	
+
 }
