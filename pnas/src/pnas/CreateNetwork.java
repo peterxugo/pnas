@@ -67,7 +67,45 @@ public class CreateNetwork {
 		// 灏嗙粨鏋滄斁鍏ュ瓧鍏镐腑浣滀负杩斿洖鍊�
 		return result;
 	}
-
+//	public HashMap<String, HashMap<String, HashMap<String, Integer>>> mapLink(
+//			ArrayList<String[]> links,int kind) {
+//		HashMap<String, HashMap<String, Integer>> usersitems = new HashMap<String, HashMap<String, Integer>>();
+//		HashMap<String, HashMap<String, Integer>> itemsusers = new HashMap<String, HashMap<String, Integer>>();
+//		// System.out.println(links.size());
+//
+//		for (int i = 0; i < links.size(); i++) {
+//			String user = links.get(i)[0];
+//			String item = links.get(i)[1];
+//			int score = Integer.valueOf(links.get(i)[2]);
+//			if (usersitems.containsKey(user)) {
+//				HashMap<String, Integer> sonmap = usersitems.get(user);
+//				sonmap.put(item, score);
+//			} else {
+//				HashMap<String, Integer> sonmap = new HashMap<String, Integer>();
+//				sonmap.put(item, score);
+//				usersitems.put(user, sonmap);
+//			}
+//		}
+//
+//		for (int i = 0; i < links.size(); i++) {
+//			String user = links.get(i)[0];
+//			String item = links.get(i)[1];
+//			int score = Integer.valueOf(links.get(i)[2]);
+//			if (itemsusers.containsKey(item)) {
+//				HashMap<String, Integer> sonmap = itemsusers.get(item);
+//				sonmap.put(user, score);
+//			} else {
+//				HashMap<String, Integer> sonmap = new HashMap<String, Integer>();
+//				sonmap.put(user, score);
+//				itemsusers.put(item, sonmap);
+//			}
+//		}
+//		HashMap<String, HashMap<String, HashMap<String, Integer>>> result = new HashMap<String, HashMap<String, HashMap<String, Integer>>>();
+//		result.put("usersitems", usersitems);
+//		result.put("itemsusers", itemsusers);
+//		// 灏嗙粨鏋滄斁鍏ュ瓧鍏镐腑浣滀负杩斿洖鍊�
+//		return result;
+//	}
 	public void randomSet(int min, int max, int n, HashSet<Integer> set) {
 		if (n > (max - min + 1) || max < min) {
 			return;

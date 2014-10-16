@@ -1,7 +1,5 @@
 package pnas;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +30,6 @@ public class Recommder {
 			ConcurrentHashMap<String, HashMap<String, Float>> wmartix) {
 
 		TranslateMartix test = new TranslateMartix(this.newlinksmap);
-		long now = System.currentTimeMillis();
 		ExecutorService pool = Executors.newFixedThreadPool(100);
 		for (String item : test.itemsusers.keySet()) {
 			pool.execute(new Myrunnable(test, item, wmartix, lambda));
@@ -40,9 +37,9 @@ public class Recommder {
 		pool.shutdown();
 		while (true) {
 			if (pool.isTerminated()) {
-//				System.out.println("wmartix used secondes\t"
-//						+ String.valueOf(System.currentTimeMillis() - now));
-//				System.out.println("wmartix size is \t" + wmartix.size());
+				// System.out.println("wmartix used secondes\t"
+				// + String.valueOf(System.currentTimeMillis() - now));
+				// System.out.println("wmartix size is \t" + wmartix.size());
 				// this.wmartix = wmartix;
 				break;
 			}
@@ -51,6 +48,32 @@ public class Recommder {
 
 	}
 
+	public HashMap<String, Float> getOneUserrecommder(String user, float lambda2) {
+		HashMap<String, Float> userrecommder = new HashMap<String, Float>();
+		HashSet<String> testitems = new HashSet<String>();
+
+		testitems.addAll(this.itemsusers.keySet());
+		testitems.removeAll(this.usersitems.get(user).keySet());
+
+		int userdegree = this.usersitems.get(user).size();
+		for (String item : testitems) {
+			float score = 0;
+			HashSet<String> commonitems = new HashSet<String>();
+			commonitems.addAll(this.usersitems.get(user).keySet());
+			commonitems.retainAll(this.wmartix.get(item).keySet());
+			if (commonitems.size() == 0) {
+				continue;
+			}
+			for (String node : commonitems) {
+				int nodedegree = this.itemsusers.get(node).size();
+				double pro = Math.pow(nodedegree, lambda2)*Math.pow(userdegree, 1-userdegree);
+				score += this.wmartix.get(item).get(node) *  pro;
+			}
+			userrecommder.put(item, score);
+		}
+		return userrecommder;
+
+	}
 	public HashMap<String, Float> getOneUserrecommder(String user) {
 		HashMap<String, Float> userrecommder = new HashMap<String, Float>();
 		HashSet<String> testitems = new HashSet<String>();
@@ -67,23 +90,20 @@ public class Recommder {
 				continue;
 			}
 			for (String node : commonitems) {
-
-				score += this.wmartix.get(item).get(node)
-						* this.usersitems.get(user).get(node);
+				score += this.wmartix.get(item).get(node);
 			}
 			userrecommder.put(item, score);
 		}
 		return userrecommder;
 
 	}
-
 }
 
 class Mythread implements Runnable {
 	String user;
 	Recommder recommder;
 	ConcurrentHashMap<String, HashMap<String, Float>> reommdermap;
-
+	float lambda2;
 	Mythread(String user, Recommder recommder,
 			ConcurrentHashMap<String, HashMap<String, Float>> reommdermap) {
 		this.user = user;
@@ -91,10 +111,18 @@ class Mythread implements Runnable {
 		this.reommdermap = reommdermap;
 	}
 
+	Mythread(String user, Recommder recommder,
+			ConcurrentHashMap<String, HashMap<String, Float>> reommdermap,
+			float lambda2) {
+		this.user = user;
+		this.recommder = recommder;
+		this.reommdermap = reommdermap;
+		this.lambda2 = lambda2;
+	}
 	@Override
 	public void run() {
 		HashMap<String, Float> userrecommder = this.recommder
-				.getOneUserrecommder(this.user);
+				.getOneUserrecommder(this.user, this.lambda2);
 		this.reommdermap.put(this.user, userrecommder);
 		// TODO Auto-generated method stub
 

@@ -37,7 +37,8 @@ public class Per2 {
 	Per2(float lambda,
 			HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap,
 			HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap,
-			HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap) {
+			HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap,
+			float lambda2) {
 		this.lambda = lambda;
 		this.newlinksmap = newlinksmap;
 		this.removelinksmap = removelinksmap;
@@ -51,7 +52,7 @@ public class Per2 {
 		this.is = new ConcurrentHashMap<String, Float>();
 		this.hs = new ConcurrentHashMap<String, Float>();
 		this.recommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
-		this.getReommder();
+		this.getReommder(lambda2);
 
 	}
 
@@ -64,6 +65,27 @@ public class Per2 {
 		for (String user : this.removeusersitems.keySet()) {
 			if (this.newusersitems.containsKey(user)) {
 				pool.execute(new Mythread(user, recommder, this.recommdermap));
+			}
+		}
+		pool.shutdown();
+		while (true) {
+			if (pool.isTerminated()) {
+				// System.out.println("recommdermap size is \t"
+				// + this.recommdermap.size());
+				break;
+			}
+		}
+
+	}
+	public void getReommder(float lambda2) {
+
+		Recommder recommder = new Recommder(this.lambda, this.newlinksmap,
+				this.removelinksmap);
+
+		ExecutorService pool = Executors.newFixedThreadPool(100);
+		for (String user : this.removeusersitems.keySet()) {
+			if (this.newusersitems.containsKey(user)) {
+				pool.execute(new Mythread(user, recommder, this.recommdermap,lambda2));
 			}
 		}
 		pool.shutdown();
@@ -203,12 +225,12 @@ public class Per2 {
 
 		int n = 20;
 
-		for (int k = 0; k < 101; k++) {
-
-			float lambda = k * 0.01f;
+		for (int k = 0; k < 21; k++) {
+			float lambda = 0.19f;
+			float lambda2 = k * 0.05f;
 			System.out.print(lambda+"\t");
 			Per2 per = new Per2(lambda, oldlinksmap, newlinksmap,
-					removelinksmap);
+					removelinksmap,lambda2);
 
 			ExecutorService pool2 = Executors.newFixedThreadPool(100);
 			for (String user : per.removeusersitems.keySet()) {
