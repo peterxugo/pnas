@@ -14,8 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.swing.SortingFocusTraversalPolicy;
-
 public class Per2 {
 
 	float lambda;
@@ -37,8 +35,7 @@ public class Per2 {
 	Per2(float lambda,
 			HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap,
 			HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap,
-			HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap,
-			float lambda2) {
+			HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap) {
 		this.lambda = lambda;
 		this.newlinksmap = newlinksmap;
 		this.removelinksmap = removelinksmap;
@@ -52,7 +49,7 @@ public class Per2 {
 		this.is = new ConcurrentHashMap<String, Float>();
 		this.hs = new ConcurrentHashMap<String, Float>();
 		this.recommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
-		this.getReommder(lambda2);
+//		this.getReommder(lambda2);
 
 	}
 
@@ -225,13 +222,12 @@ public class Per2 {
 
 		int n = 20;
 
-		for (int k = 0; k < 21; k++) {
-			float lambda = 0.19f;
-			float lambda2 = k * 0.05f;
+		for (int k = 0; k < 20; k++) {
+			float lambda = 0.05f*k;
 			System.out.print(lambda+"\t");
 			Per2 per = new Per2(lambda, oldlinksmap, newlinksmap,
-					removelinksmap,lambda2);
-
+					removelinksmap);
+			per.getReommder();
 			ExecutorService pool2 = Executors.newFixedThreadPool(100);
 			for (String user : per.removeusersitems.keySet()) {
 				if (per.recommdermap.get(user) == null) {

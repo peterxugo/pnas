@@ -55,7 +55,7 @@ public class Recommder {
 		testitems.addAll(this.itemsusers.keySet());
 		testitems.removeAll(this.usersitems.get(user).keySet());
 
-		int userdegree = this.usersitems.get(user).size();
+//		int userdegree = this.usersitems.get(user).size();
 		for (String item : testitems) {
 			float score = 0;
 			HashSet<String> commonitems = new HashSet<String>();
@@ -66,7 +66,7 @@ public class Recommder {
 			}
 			for (String node : commonitems) {
 				int nodedegree = this.itemsusers.get(node).size();
-				double pro = Math.pow(nodedegree, lambda2)*Math.pow(userdegree, 1-userdegree);
+				double pro = Math.pow(nodedegree, lambda2);
 				score += this.wmartix.get(item).get(node) *  pro;
 			}
 			userrecommder.put(item, score);
@@ -122,7 +122,7 @@ class Mythread implements Runnable {
 	@Override
 	public void run() {
 		HashMap<String, Float> userrecommder = this.recommder
-				.getOneUserrecommder(this.user, this.lambda2);
+				.getOneUserrecommder(this.user);
 		this.reommdermap.put(this.user, userrecommder);
 		// TODO Auto-generated method stub
 
