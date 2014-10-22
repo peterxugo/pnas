@@ -74,7 +74,8 @@ public class Per2 {
 		}
 
 	}
-	public void getReommder(float lambda2) {
+	
+	public void getReommder(float kind) {
 
 		Recommder recommder = new Recommder(this.lambda, this.newlinksmap,
 				this.removelinksmap);
@@ -82,7 +83,7 @@ public class Per2 {
 		ExecutorService pool = Executors.newFixedThreadPool(100);
 		for (String user : this.removeusersitems.keySet()) {
 			if (this.newusersitems.containsKey(user)) {
-				pool.execute(new Mythread(user, recommder, this.recommdermap,lambda2));
+				pool.execute(new Mythread(user, recommder, this.recommdermap,kind));
 			}
 		}
 		pool.shutdown();
@@ -208,7 +209,7 @@ public class Per2 {
 
 	public static void main(String[] agrs) throws IOException {
 
-		String filename = "/source/newnetflix";
+		String filename = "/source/new_RYM.data";
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork.getLinkList(filename);
 		HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap = createnetwork
@@ -222,12 +223,12 @@ public class Per2 {
 
 		int n = 20;
 
-		for (int k = 0; k < 20; k++) {
-			float lambda = 0.05f*k;
-			System.out.print(lambda+"\t");
-			Per2 per = new Per2(lambda, oldlinksmap, newlinksmap,
+		for (int k = 1; k < 20; k++) {
+			float kind = 0.5f*k;
+			System.out.print(kind+"\t");
+			Per2 per = new Per2(kind, oldlinksmap, newlinksmap,
 					removelinksmap);
-			per.getReommder();
+			per.getReommder(kind);
 			ExecutorService pool2 = Executors.newFixedThreadPool(100);
 			for (String user : per.removeusersitems.keySet()) {
 				if (per.recommdermap.get(user) == null) {
