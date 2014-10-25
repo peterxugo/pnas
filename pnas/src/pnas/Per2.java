@@ -75,27 +75,7 @@ public class Per2 {
 
 	}
 	
-	public void getReommder(float kind) {
 
-		Recommder recommder = new Recommder(this.lambda, this.newlinksmap,
-				this.removelinksmap);
-
-		ExecutorService pool = Executors.newFixedThreadPool(100);
-		for (String user : this.removeusersitems.keySet()) {
-			if (this.newusersitems.containsKey(user)) {
-				pool.execute(new Mythread(user, recommder, this.recommdermap,kind));
-			}
-		}
-		pool.shutdown();
-		while (true) {
-			if (pool.isTerminated()) {
-				// System.out.println("recommdermap size is \t"
-				// + this.recommdermap.size());
-				break;
-			}
-		}
-
-	}
 	public List<Entry<String, Float>> sortRecomdermap(String user) {
 		HashMap<String, Float> userrecommderlist = this.recommdermap.get(user);
 		List<Map.Entry<String, Float>> sortresult = new ArrayList<Map.Entry<String, Float>>(
@@ -224,11 +204,11 @@ public class Per2 {
 		int n = 20;
 
 		for (int k = 1; k < 20; k++) {
-			float kind = 0.5f*k;
-			System.out.print(kind+"\t");
-			Per2 per = new Per2(kind, oldlinksmap, newlinksmap,
+			float lambda = 0.05f*k;
+			System.out.print(lambda+"\t");
+			Per2 per = new Per2(lambda, oldlinksmap, newlinksmap,
 					removelinksmap);
-			per.getReommder(kind);
+			per.getReommder();
 			ExecutorService pool2 = Executors.newFixedThreadPool(100);
 			for (String user : per.removeusersitems.keySet()) {
 				if (per.recommdermap.get(user) == null) {

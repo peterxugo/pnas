@@ -41,19 +41,15 @@ public class Recommder {
 		pool.shutdown();
 		while (true) {
 			if (pool.isTerminated()) {
-				// System.out.println("wmartix used secondes\t"
-				// + String.valueOf(System.currentTimeMillis() - now));
-				// System.out.println("wmartix size is \t" + wmartix.size());
-				// this.wmartix = wmartix;
 				break;
 			}
 
 		}
 
 	}
-	public HashMap<Integer, Integer> getsmaedegreeuseritemsmedian() {
+
+	public HashMap<Integer, ArrayList<Integer>> getsameuseritemsdegrees() {
 		HashMap<Integer, ArrayList<Integer>> sameuseritemsdegrees = new HashMap<Integer, ArrayList<Integer>>();
-		HashMap<Integer, Integer> sameuseritemsdegreesmeadian = new HashMap<Integer, Integer>();
 		for (String user : this.usersitems.keySet()) {
 			ArrayList<Integer> itemsdegree = new ArrayList<Integer>();
 			for (String item : this.usersitems.get(user).keySet()) {
@@ -68,6 +64,13 @@ public class Recommder {
 				sameuseritemsdegrees.put(userdegree, itemsdegree);
 			}
 		}
+		return sameuseritemsdegrees;
+	}
+
+	public HashMap<Integer, Integer> getsmaedegreeuseritemsmedian() {
+		HashMap<Integer, ArrayList<Integer>> sameuseritemsdegrees=this.getsameuseritemsdegrees() ;
+		HashMap<Integer, Integer> sameuseritemsdegreesmeadian = new HashMap<Integer, Integer>();
+		
 		for (int userdegree : sameuseritemsdegrees.keySet()) {
 			ArrayList<Integer> itemsdegree = sameuseritemsdegrees
 					.get(userdegree);
@@ -77,6 +80,7 @@ public class Recommder {
 		}
 		return sameuseritemsdegreesmeadian;
 	}
+	
 	public HashMap<String, Float> getOneUserrecommder(String user, float kind) {
 		HashMap<String, Float> userrecommder = new HashMap<String, Float>();
 		HashSet<String> testitems = new HashSet<String>();
@@ -84,17 +88,22 @@ public class Recommder {
 		testitems.addAll(this.itemsusers.keySet());
 		testitems.removeAll(this.usersitems.get(user).keySet());
 
-		int median ;
-//		ArrayList<Integer> itemsdegree = new ArrayList<Integer>(); 
-//		for(String item:this.usersitems.get(user).keySet()){
-//			itemsdegree.add(this.itemsusers.get(item).size());
+		// int median ;
+		// ArrayList<Integer> itemsdegree = new ArrayList<Integer>();
+		// for(String item:this.usersitems.get(user).keySet()){
+		// itemsdegree.add(this.itemsusers.get(item).size());
+		// }
+		// Collections.sort(itemsdegree);
+		// median = itemsdegree.get(itemsdegree.size()/2);
+		ArrayList<Integer> itemsdegrees = this.getsameuseritemsdegrees().get(this.usersitems.get(user).size());
+//		for (String item : this.usersitems.get(user).keySet()) {
+//			itemsdegrees.add(this.itemsusers.get(item).size());
 //		}
-//		Collections.sort(itemsdegree);
-//		median = itemsdegree.get(itemsdegree.size()/2);
-		median = this.sameuseritemsdegreesmeadian.get(this.usersitems.get(user).size());
+		// median =
+		// this.sameuseritemsdegreesmeadian.get(this.usersitems.get(user).size());
 		for (String item : testitems) {
 			float score = 0;
-			
+
 			HashSet<String> commonitems = new HashSet<String>();
 			commonitems.addAll(this.usersitems.get(user).keySet());
 			commonitems.retainAll(this.wmartix.get(item).keySet());
@@ -102,38 +111,45 @@ public class Recommder {
 				continue;
 			}
 			for (String node : commonitems) {
+
 				int nodedegree = this.itemsusers.get(node).size();
-				double pro = 1f / (1 + Math.abs(Math.log(nodedegree)/Math.log(kind)
-						 - Math.log(median)/Math.log(kind)));
-				score += this.wmartix.get(item).get(node) ;
+				double distance = 0;
+				for (int itemdegree : itemsdegrees) {
+					distance += Math.abs(nodedegree - itemdegree);
+				}
+				distance = distance / itemsdegrees.size();
+				distance = 1d / (1 + distance);
+				// double pro = 1f / (1 + Math.abs(Math.log(nodedegree)
+				// - Math.log(median)));
+				score += this.wmartix.get(item).get(node) * distance;
 			}
 			userrecommder.put(item, score);
 		}
 		return userrecommder;
 	}
-	public HashMap<String, Float> getOneUserrecommder(String user) {
-		HashMap<String, Float> userrecommder = new HashMap<String, Float>();
-		HashSet<String> testitems = new HashSet<String>();
-
-		testitems.addAll(this.itemsusers.keySet());
-		testitems.removeAll(this.usersitems.get(user).keySet());
-
-		for (String item : testitems) {
-			float score = 0;
-			HashSet<String> commonitems = new HashSet<String>();
-			commonitems.addAll(this.usersitems.get(user).keySet());
-			commonitems.retainAll(this.wmartix.get(item).keySet());
-			if (commonitems.size() == 0) {
-				continue;
-			}
-			for (String node : commonitems) {
-				score += this.wmartix.get(item).get(node);
-			}
-			userrecommder.put(item, score);
-		}
-		return userrecommder;
-
-	}
+	// public HashMap<String, Float> getOneUserrecommder(String user) {
+	// HashMap<String, Float> userrecommder = new HashMap<String, Float>();
+	// HashSet<String> testitems = new HashSet<String>();
+	//
+	// testitems.addAll(this.itemsusers.keySet());
+	// testitems.removeAll(this.usersitems.get(user).keySet());
+	//
+	// for (String item : testitems) {
+	// float score = 0;
+	// HashSet<String> commonitems = new HashSet<String>();
+	// commonitems.addAll(this.usersitems.get(user).keySet());
+	// commonitems.retainAll(this.wmartix.get(item).keySet());
+	// if (commonitems.size() == 0) {
+	// continue;
+	// }
+	// for (String node : commonitems) {
+	// score += this.wmartix.get(item).get(node);
+	// }
+	// userrecommder.put(item, score);
+	// }
+	// return userrecommder;
+	//
+	// }
 }
 
 class Mythread implements Runnable {
@@ -142,26 +158,18 @@ class Mythread implements Runnable {
 	ConcurrentHashMap<String, HashMap<String, Float>> reommdermap;
 	HashMap<Integer, Integer> sameuseritemsdegreesmeadian;
 	float kind;
+
 	Mythread(String user, Recommder recommder,
 			ConcurrentHashMap<String, HashMap<String, Float>> reommdermap) {
 		this.user = user;
 		this.recommder = recommder;
 		this.reommdermap = reommdermap;
 	}
-	
-	
-	Mythread(String user, Recommder recommder,
-			ConcurrentHashMap<String, HashMap<String, Float>> reommdermap,
-			float kind) {
-		this.user = user;
-		this.recommder = recommder;
-		this.reommdermap = reommdermap;
-		this.kind = kind;
-	}
+
 	@Override
 	public void run() {
 		HashMap<String, Float> userrecommder = this.recommder
-				.getOneUserrecommder(this.user,this.kind);
+				.getOneUserrecommder(this.user, 1);
 		this.reommdermap.put(this.user, userrecommder);
 		// TODO Auto-generated method stub
 

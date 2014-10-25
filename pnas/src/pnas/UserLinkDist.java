@@ -9,7 +9,7 @@ import java.util.Set;
 public class UserLinkDist {
 	
 	public void getlinkdegree(String filename) throws IOException{
-		String fileName = "source/duserlinkdegree.txt";
+		String fileName = "source/rymduserlinkdegree.txt";
 		@SuppressWarnings("resource")
 		FileWriter fw = new FileWriter(fileName);
 		CreateNetwork network = new CreateNetwork();
@@ -30,7 +30,7 @@ public class UserLinkDist {
 	public static void main(String[] args) {
 		UserLinkDist userlinkdist = new  UserLinkDist();
 		try {
-			userlinkdist.getlinkdegree("/source/delicious.data");
+			userlinkdist.getlinkdegree("/source/new_RYM.data");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
