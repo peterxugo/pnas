@@ -75,7 +75,27 @@ public class Per2 {
 
 	}
 	
+	public void getReommder(double kind) {
 
+		Recommder recommder = new Recommder(this.lambda, this.newlinksmap,
+				this.removelinksmap);
+
+		ExecutorService pool = Executors.newFixedThreadPool(100);
+		for (String user : this.removeusersitems.keySet()) {
+			if (this.newusersitems.containsKey(user)) {
+				pool.execute(new Mythread(user, recommder, this.recommdermap));
+			}
+		}
+		pool.shutdown();
+		while (true) {
+			if (pool.isTerminated()) {
+				// System.out.println("recommdermap size is \t"
+				// + this.recommdermap.size());
+				break;
+			}
+		}
+
+	}
 	public List<Entry<String, Float>> sortRecomdermap(String user) {
 		HashMap<String, Float> userrecommderlist = this.recommdermap.get(user);
 		List<Map.Entry<String, Float>> sortresult = new ArrayList<Map.Entry<String, Float>>(
@@ -85,7 +105,6 @@ public class Per2 {
 
 					public int compare(Entry<String, Float> o1,
 							Entry<String, Float> o2) {
-						// TODO Auto-generated method stub
 						if (o2.getValue() - o1.getValue() > 0) {
 							return 1;
 						} else if (o2.getValue() - o1.getValue() < 0) {
@@ -188,8 +207,8 @@ public class Per2 {
 	}
 
 	public static void main(String[] agrs) throws IOException {
-
-		String filename = "/source/new_RYM.data";
+		
+		String filename = "/source/taobao.txt";
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork.getLinkList(filename);
 		HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap = createnetwork

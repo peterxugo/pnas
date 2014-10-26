@@ -15,6 +15,7 @@ public class Recommder {
 	HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap;
 	HashMap<String, HashMap<String, Integer>> removeusersitems;
 	HashMap<Integer, Integer> sameuseritemsdegreesmeadian;
+	HashMap<Integer, ArrayList<Integer>> sameuseritemsdegrees;
 
 	public Recommder(
 			float lambda,
@@ -26,7 +27,8 @@ public class Recommder {
 		this.itemsusers = newlinksmap.get("itemsusers");
 		this.wmartix = new ConcurrentHashMap<String, HashMap<String, Float>>();
 		this.getWmartix(lambda, this.wmartix);
-		this.sameuseritemsdegreesmeadian = this.getsmaedegreeuseritemsmedian();
+//		this.sameuseritemsdegrees = this.getsameuseritemsdegrees();
+//		this.sameuseritemsdegreesmeadian = this.getsmaedegreeuseritemsmedian(this.sameuseritemsdegrees);
 
 	}
 
@@ -67,8 +69,7 @@ public class Recommder {
 		return sameuseritemsdegrees;
 	}
 
-	public HashMap<Integer, Integer> getsmaedegreeuseritemsmedian() {
-		HashMap<Integer, ArrayList<Integer>> sameuseritemsdegrees=this.getsameuseritemsdegrees() ;
+	public HashMap<Integer, Integer> getsmaedegreeuseritemsmedian(HashMap<Integer, ArrayList<Integer>> sameuseritemsdegrees) {
 		HashMap<Integer, Integer> sameuseritemsdegreesmeadian = new HashMap<Integer, Integer>();
 		
 		for (int userdegree : sameuseritemsdegrees.keySet()) {
@@ -88,19 +89,11 @@ public class Recommder {
 		testitems.addAll(this.itemsusers.keySet());
 		testitems.removeAll(this.usersitems.get(user).keySet());
 
-		// int median ;
-		// ArrayList<Integer> itemsdegree = new ArrayList<Integer>();
-		// for(String item:this.usersitems.get(user).keySet()){
-		// itemsdegree.add(this.itemsusers.get(item).size());
-		// }
-		// Collections.sort(itemsdegree);
-		// median = itemsdegree.get(itemsdegree.size()/2);
-		ArrayList<Integer> itemsdegrees = this.getsameuseritemsdegrees().get(this.usersitems.get(user).size());
-//		for (String item : this.usersitems.get(user).keySet()) {
-//			itemsdegrees.add(this.itemsusers.get(item).size());
-//		}
-		// median =
-		// this.sameuseritemsdegreesmeadian.get(this.usersitems.get(user).size());
+
+		ArrayList<Integer> itemsdegrees = new ArrayList<Integer> ();
+		for (String item : this.usersitems.get(user).keySet()) {
+			itemsdegrees.add(this.itemsusers.get(item).size());
+		}
 		for (String item : testitems) {
 			float score = 0;
 
@@ -119,8 +112,6 @@ public class Recommder {
 				}
 				distance = distance / itemsdegrees.size();
 				distance = 1d / (1 + distance);
-				// double pro = 1f / (1 + Math.abs(Math.log(nodedegree)
-				// - Math.log(median)));
 				score += this.wmartix.get(item).get(node) * distance;
 			}
 			userrecommder.put(item, score);
