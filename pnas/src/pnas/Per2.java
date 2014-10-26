@@ -208,7 +208,7 @@ public class Per2 {
 
 	public static void main(String[] agrs) throws IOException {
 		
-		String filename = "/source/taobao.txt";
+		String filename = "/source/new_RYM.data";
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork.getLinkList(filename);
 		HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap = createnetwork
