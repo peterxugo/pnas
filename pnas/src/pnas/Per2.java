@@ -18,6 +18,7 @@ public class Per2 {
 
 	float lambda;
 	String filename;
+	double h ;
 	HashMap<String, HashMap<String, Integer>> oldusersitems;
 	HashMap<String, HashMap<String, Integer>> olditemsusers;
 	HashMap<String, HashMap<String, Integer>> newusersitems;
@@ -27,7 +28,7 @@ public class Per2 {
 	ConcurrentHashMap<String, Float> rs;
 	ConcurrentHashMap<String, Float> ps;
 	ConcurrentHashMap<String, Float> is;
-	ConcurrentHashMap<String, Float> hs;
+
 	ConcurrentHashMap<String, HashMap<String, Float>> recommdermap;
 	private HashMap<String, HashMap<String, HashMap<String, Integer>>> newlinksmap;
 	private HashMap<String, HashMap<String, HashMap<String, Integer>>> removelinksmap;
@@ -47,7 +48,6 @@ public class Per2 {
 		this.rs = new ConcurrentHashMap<String, Float>();
 		this.ps = new ConcurrentHashMap<String, Float>();
 		this.is = new ConcurrentHashMap<String, Float>();
-		this.hs = new ConcurrentHashMap<String, Float>();
 		this.recommdermap = new ConcurrentHashMap<String, HashMap<String, Float>>();
 //		this.getReommder(lambda2);
 
@@ -75,7 +75,7 @@ public class Per2 {
 
 	}
 	
-	public void getReommder(double kind) {
+	public void getReommder(float kind) {
 
 		Recommder recommder = new Recommder(this.lambda, this.newlinksmap,
 				this.removelinksmap);
@@ -83,7 +83,7 @@ public class Per2 {
 		ExecutorService pool = Executors.newFixedThreadPool(100);
 		for (String user : this.removeusersitems.keySet()) {
 			if (this.newusersitems.containsKey(user)) {
-				pool.execute(new Mythread(user, recommder, this.recommdermap));
+				pool.execute(new Mythread(user, recommder, this.recommdermap,kind));
 			}
 		}
 		pool.shutdown();
@@ -206,9 +206,34 @@ public class Per2 {
 		return iavrage;
 	}
 
+	
+	public double getPersonalization(int n){
+		double total_h =0;
+		int total_count = 0;
+		ArrayList<Set<String>> tops = new ArrayList<Set<String>>();
+		for(String user:this.removeusersitems.keySet()){
+			List<Entry<String, Float>> sortresult = this.sortRecomdermap(user);
+			Set<String> topn = this.getTopn(n, sortresult);
+			tops.add(topn);
+			double h = 0;
+			double count = 0;
+			for(Set<String> item:tops){
+				Set<String> same = new HashSet<String>();
+				same.addAll(topn);
+				same.retainAll(item);
+				h+=1-(double)same.size()/n;
+				count+=1;
+			}
+			total_h+=h/count;
+			total_count +=1;
+		}
+		double h = total_h/total_count;
+		this.h = h;
+		return h;
+	}
 	public static void main(String[] agrs) throws IOException {
 		
-		String filename = "/source/new_RYM.data";
+		String filename = "/source/newnetflix";
 		CreateNetwork createnetwork = new CreateNetwork();
 		ArrayList<String[]> links = createnetwork.getLinkList(filename);
 		HashMap<String, HashMap<String, HashMap<String, Integer>>> oldlinksmap = createnetwork
@@ -221,14 +246,15 @@ public class Per2 {
 				.mapLink(a.get("dellinks"));
 
 		int n = 20;
-
-		for (int k = 1; k < 20; k++) {
-			float lambda = 0.05f*k;
-			System.out.print(lambda+"\t");
-			Per2 per = new Per2(lambda, oldlinksmap, newlinksmap,
+		
+		for (int k = -10; k < 10; k++) {
+			float kind = 0.1f*k;
+			System.out.print(kind+"\t");
+			Per2 per = new Per2(0.19f, oldlinksmap, newlinksmap,
 					removelinksmap);
-			per.getReommder();
+			per.getReommder(kind);
 			ExecutorService pool2 = Executors.newFixedThreadPool(100);
+			pool2.execute(new H(per,n));
 			for (String user : per.removeusersitems.keySet()) {
 				if (per.recommdermap.get(user) == null) {
 					continue;
@@ -268,13 +294,17 @@ public class Per2 {
 			System.out.print(ep + "\t");
 			// averages ep
 
+			System.out.print(per.h+"\t");
+			
 			float icount = 0;
 			for (float i : per.is.values()) {
 				icount += i;
 			}
 			System.out.println(icount / per.is.size());
 			// averages i
+			
 		}
+		
 	}
 
 }
@@ -299,4 +329,15 @@ class PerRunnable implements Runnable {
 
 	}
 
+}
+class H implements Runnable{
+	Per2 per;
+	int n;
+	H(Per2 per,  int n){
+		this.per = per;
+		this.n = n;
+	}
+	public void run(){
+		per.getPersonalization(this.n);
+	}
 }

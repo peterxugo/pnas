@@ -90,10 +90,10 @@ public class Recommder {
 		testitems.removeAll(this.usersitems.get(user).keySet());
 
 
-		ArrayList<Integer> itemsdegrees = new ArrayList<Integer> ();
-		for (String item : this.usersitems.get(user).keySet()) {
-			itemsdegrees.add(this.itemsusers.get(item).size());
-		}
+//		ArrayList<Integer> itemsdegrees = new ArrayList<Integer> ();
+//		for (String item : this.usersitems.get(user).keySet()) {
+//			itemsdegrees.add(this.itemsusers.get(item).size());
+//		}
 		for (String item : testitems) {
 			float score = 0;
 
@@ -106,13 +106,13 @@ public class Recommder {
 			for (String node : commonitems) {
 
 				int nodedegree = this.itemsusers.get(node).size();
-				double distance = 0;
-				for (int itemdegree : itemsdegrees) {
-					distance += Math.abs(nodedegree - itemdegree);
-				}
-				distance = distance / itemsdegrees.size();
-				distance = 1d / (1 + distance);
-				score += this.wmartix.get(item).get(node) * distance;
+//				double distance = 0;
+//				for (int itemdegree : itemsdegrees) {
+//					distance += Math.abs(nodedegree - itemdegree);
+//				}
+//				distance = distance / itemsdegrees.size();
+//				distance = 1d / (1 + distance);
+				score += this.wmartix.get(item).get(node) * Math.pow(nodedegree, kind);
 			}
 			userrecommder.put(item, score);
 		}
@@ -151,16 +151,22 @@ class Mythread implements Runnable {
 	float kind;
 
 	Mythread(String user, Recommder recommder,
+			ConcurrentHashMap<String, HashMap<String, Float>> reommdermap,float kind) {
+		this.user = user;
+		this.recommder = recommder;
+		this.reommdermap = reommdermap;
+		this.kind = kind;
+	}
+	Mythread(String user, Recommder recommder,
 			ConcurrentHashMap<String, HashMap<String, Float>> reommdermap) {
 		this.user = user;
 		this.recommder = recommder;
 		this.reommdermap = reommdermap;
 	}
-
 	@Override
 	public void run() {
 		HashMap<String, Float> userrecommder = this.recommder
-				.getOneUserrecommder(this.user, 1);
+				.getOneUserrecommder(this.user, kind);
 		this.reommdermap.put(this.user, userrecommder);
 		// TODO Auto-generated method stub
 
