@@ -75,27 +75,29 @@ public class Per2 {
 
 	}
 	
-	public void getReommder(float kind) {
+//	public void getReommder(float kind) {
+//		
+//		Recommder recommder = new Recommder(this.lambda, this.newlinksmap,
+//				this.removelinksmap);
+//
+//		ExecutorService pool = Executors.newFixedThreadPool(100);
+//		for (String user : this.removeusersitems.keySet()) {
+//			if (this.newusersitems.containsKey(user)) {
+//				pool.execute(new Mythread(user, recommder, this.recommdermap,kind));
+//			}
+//		}
+//		pool.shutdown();
+//		while (true) {
+//			if (pool.isTerminated()) {
+//				// System.out.println("recommdermap size is \t"
+//				// + this.recommdermap.size());
+//				break;
+//			}
+//		}
+//
+//
+//	}
 
-		Recommder recommder = new Recommder(this.lambda, this.newlinksmap,
-				this.removelinksmap);
-
-		ExecutorService pool = Executors.newFixedThreadPool(100);
-		for (String user : this.removeusersitems.keySet()) {
-			if (this.newusersitems.containsKey(user)) {
-				pool.execute(new Mythread(user, recommder, this.recommdermap,kind));
-			}
-		}
-		pool.shutdown();
-		while (true) {
-			if (pool.isTerminated()) {
-				// System.out.println("recommdermap size is \t"
-				// + this.recommdermap.size());
-				break;
-			}
-		}
-
-	}
 	public List<Entry<String, Float>> sortRecomdermap(String user) {
 		HashMap<String, Float> userrecommderlist = this.recommdermap.get(user);
 		List<Map.Entry<String, Float>> sortresult = new ArrayList<Map.Entry<String, Float>>(
@@ -247,19 +249,21 @@ public class Per2 {
 
 		int n = 20;
 		
-		for (int k = -10; k < 10; k++) {
-			float kind = 0.1f*k;
-			System.out.print(kind+"\t");
-			Per2 per = new Per2(0.19f, oldlinksmap, newlinksmap,
+		for (int k = 1; k < 30; k++) {
+			float lambda = 0.01f*k;
+			System.out.print(lambda+"\t");
+			Per2 per = new Per2(lambda, oldlinksmap, newlinksmap,
 					removelinksmap);
-			per.getReommder(kind);
+			per.getReommder();
 			ExecutorService pool2 = Executors.newFixedThreadPool(100);
 			pool2.execute(new H(per,n));
 			for (String user : per.removeusersitems.keySet()) {
-				if (per.recommdermap.get(user) == null) {
+				if (per.recommdermap.get(user).size() < 1) {
 					continue;
+				}else{
+					pool2.execute(new PerRunnable(per, user, n));
 				}
-				pool2.execute(new PerRunnable(per, user, n));
+				
 			}
 			pool2.shutdown();
 			while (true) {

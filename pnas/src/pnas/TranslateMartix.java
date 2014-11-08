@@ -1,9 +1,13 @@
 package pnas;
 
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
+
+import sun.font.EAttribute;
 
 public class TranslateMartix {
 	HashMap<String, HashMap<String, Integer>> usersitems;
@@ -45,16 +49,35 @@ public class TranslateMartix {
 		return itemw;
 
 	}
+	public void getSecondOrderwmartix(String key,
+			ConcurrentHashMap<String, HashMap<String, Float>> wmartix,
+			ConcurrentHashMap<String, HashMap<String, Float>> secondwmartix) {
+		secondwmartix.put(key, (HashMap<String, Float>) wmartix.get(key)
+				.clone());
+		for (String sonkey : wmartix.get(key).keySet()) {
+			HashMap<String, Float> sonhashmap = wmartix.get(sonkey);
+			for (String item : sonhashmap.keySet()) {
+				float w = sonhashmap.get(item) * wmartix.get(key).get(sonkey);
+				if (wmartix.get(key).containsKey(item)) {
+					secondwmartix.get(key).put(item,
+							wmartix.get(key).get(item) * (1 + w));
+				} else {
+					secondwmartix.get(key).put(item, w);
+				}
+			}
+		}
+
+	}
 
 }
 
-class Myrunnable implements Runnable {
+class RunWmartix implements Runnable {
 	TranslateMartix translatemartix;
 	String item;
 	float lambda;
 	ConcurrentHashMap<String, HashMap<String, Float>> wmartix;
 
-	public Myrunnable(TranslateMartix translatemartix, String item,
+	public RunWmartix(TranslateMartix translatemartix, String item,
 			ConcurrentHashMap<String, HashMap<String, Float>> wmartix,
 			float lambda) {
 		this.translatemartix = translatemartix;
@@ -69,5 +92,27 @@ class Myrunnable implements Runnable {
 				this.item, this.lambda);
 		// TODO Auto-generated method stub
 		this.wmartix.put(this.item, oneitemws);
+	}
+}
+
+class RunSecondWmartix implements Runnable {
+	ConcurrentHashMap<String, HashMap<String, Float>> wmartix;
+	ConcurrentHashMap<String, HashMap<String, Float>> secondwmartix;
+	TranslateMartix translatemartix;
+	String key;
+
+	RunSecondWmartix(String key,
+			ConcurrentHashMap<String, HashMap<String, Float>> wmartix,
+			ConcurrentHashMap<String, HashMap<String, Float>> secondwmartix,
+			TranslateMartix translatemartix) {
+		this.wmartix = wmartix;
+		this.secondwmartix = secondwmartix;
+		this.translatemartix = translatemartix;
+		this.key = key;
+
+	}
+	public void run() {
+		this.translatemartix.getSecondOrderwmartix(this.key,this.wmartix,
+				this.secondwmartix);
 	}
 }
